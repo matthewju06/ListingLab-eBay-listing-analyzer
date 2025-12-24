@@ -3,26 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eBay Sales Finder</title>
+    <title>ListingLab</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>eBay Sales Finder</h1>
-            <p class="subtitle">Search for products on eBay</p>
-        </header>
-
-        <div class="search-section">
+    <!-- Header with Search -->
+    <header class="main-header">
+        <div class="header-content">
+            <h1 class="logo">ListingLab</h1>
             <div class="search-box">
-                <input 
-                    type="text" 
-                    id="searchInput" 
-                    placeholder="Enter product name..."
-                    autocomplete="off"
-                >
-                <button id="searchButton" type="button">Search</button>
+                <div class="search-input-container">
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        placeholder="Enter product name..."
+                        autocomplete="off"
+                    >
+                </div>
+                <div class="search-button-container">
+                    <button id="searchButton" type="button">Search</button>
+                </div>
             </div>
+            <div class="history-button-container">
+                <button id="historyButton" type="button" class="history-btn">Search History</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Home Page Title (shown when no search results) -->
+        <div id="homePage" class="home-page">
+            <h1 class="home-title">ListingLab</h1>
         </div>
 
         <div id="loadingIndicator" class="loading" style="display: none;">
@@ -32,6 +43,55 @@
 
         <div id="errorMessage" class="error-message" style="display: none;"></div>
 
+        <!-- Dashboard Area (shown after successful search) -->
+        <div id="dashboardSection" class="dashboard-section" style="display: none;">
+            <div class="dashboard-content">
+                <!-- Left: Insights Panel -->
+                <div class="insights-panel">
+                    <h2>Insights</h2>
+                    <div class="insights-toggle">
+                        <button class="toggle-btn active" data-chart="histogram">Price Distribution</button>
+                        <button class="toggle-btn" data-chart="scatter">Seller vs Price</button>
+                        <button class="toggle-btn" data-chart="bar">Used vs New</button>
+                    </div>
+                    <div class="graph-container">
+                        <div class="graph-placeholder" id="insightsChart">
+                            <p id="chartTitle">Price Distribution Histogram</p>
+                            <div class="placeholder-content">Chart placeholder</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Summary Panel -->
+                <div class="summary-panel">
+                    <h2>Summary</h2>
+                    <div class="summary-content">
+                        <div class="summary-item">
+                            <span class="summary-label">Query:</span>
+                            <span id="summaryQuery" class="summary-value">-</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Total Items:</span>
+                            <span id="summaryTotalItems" class="summary-value">-</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Average Price:</span>
+                            <span id="summaryAvgPrice" class="summary-value">-</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Price Range:</span>
+                            <span id="summaryPriceRange" class="summary-value">-</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Top Category:</span>
+                            <span id="summaryTopCategory" class="summary-value">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Table (existing functionality) -->
         <div id="resultsSection" class="results-section" style="display: none;">
             <h2>Search Results</h2>
             <div id="resultsTableContainer">
@@ -50,6 +110,21 @@
                     <tbody id="resultsTableBody">
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search History Modal -->
+    <div id="historyModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Search History</h2>
+                <button id="closeHistoryModal" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="historyList" class="history-list">
+                    <p class="no-history">No search history yet.</p>
+                </div>
             </div>
         </div>
     </div>
