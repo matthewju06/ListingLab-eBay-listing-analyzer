@@ -1,0 +1,28 @@
+# eBay Sales Finder
+A Python project that uses the eBay Browse API to search listings and retrieve pricing data.
+This project focuses on learning API integration, OAuth authentication, and backend structure
+for future analysis and visualization.
+
+# Setup
+```bash
+git clone https://github.com/<your-username>/ebay-sales-finder.git
+cd ebay-sales-finder
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+Create a .env file in the project root:
+CLIENT_ID=your_ebay_client_id
+CLIENT_SECRET=your_ebay_client_secret
+EBAY_ENV=sandbox
+
+Run:
+python src/backend/main.py
+
+Notes:
+.env is ignored; .env.example documents required variables
+Uses the eBay Sandbox environment
+Frontend and Flask integration are works in progress
+
+That’s it.
+
