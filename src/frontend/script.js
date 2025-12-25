@@ -97,7 +97,7 @@ async function handleSearch() {
         // For now, show mock data since backend isn't connected
         // Remove this when backend is ready
         console.log('Backend not connected yet, showing mock data');
-        showMockResults();
+        showMockResults(query);
         
         // Uncomment this when backend is ready:
         // showError(`Error: ${error.message}`);
@@ -132,7 +132,7 @@ function displayResults(data, query) {
         return;
     }
 
-    dashboardTitle.textContent = `Overview - ${query}`;
+    dashboardTitle.innerHTML = `Overview: <span style="color: #0064D2;">${query}</span>`;
 
     // Save to search history
     saveToHistory(query);
@@ -271,7 +271,7 @@ function populateDashboard(items) {
 }
 
 // Show mock results for testing (remove when backend is connected)
-function showMockResults() {
+function showMockResults(query) {
     const mockData = {
         itemSummaries: [
             {
@@ -295,7 +295,7 @@ function showMockResults() {
         ]
     };
     
-    displayResults(mockData);
+    displayResults(mockData, query || 'Mock Search');
 }
 
 // UI helper functions
@@ -346,6 +346,11 @@ function hideHomePage() {
 
 // Search History Functions
 function saveToHistory(query) {
+    // Safety check: don't save undefined/null queries
+    if (!query || typeof query !== 'string' || query.trim() === '') {
+        return;
+    }
+    
     const history = getHistory();
     const timestamp = new Date().toISOString();
     

@@ -20,9 +20,7 @@
                         autocomplete="off"
                     >
                 </div>
-                <div class="search-button-container">
-                    <button id="searchButton" type="button">Search</button>
-                </div>
+                <button id="searchButton" type="button">Search</button>
             </div>
             <div class="history-button-container">
                 <button id="historyButton" type="button" class="history-btn">Search History</button>
@@ -45,7 +43,7 @@
 
         <!-- Dashboard Area (shown after successful search) -->
         <div id="dashboardSection" class="dashboard-section" style="display: none;">
-            <h2 class="dashboard-title" id="dashboardTitle">Overview</h2>
+            <h2 class="dashboard-title" id="dashboardTitle"></h2>
             <div class="dashboard-layout">
                 <!-- Left Sidebar: Metric Cards -->
                 <div class="left-sidebar">
@@ -131,7 +129,7 @@
         <div id="resultsSection" class="results-section" style="display: none;">
             <div class="results-header">
                 <h2>Search Results</h2>
-                <button id="downloadButton" class="download-btn">Download All Data</button>
+                <button class="download-btn">Download All Data</button>
             </div>
             <div id="resultsTableContainer">
                 <table id="resultsTable">
