@@ -197,7 +197,7 @@ function displayResults(data, query) {
 
         // item category
         const categoryCell = document.createElement('td');
-        const category = item.mainCategory || item['main category'] || 'N/A';
+        const category = item.categories?.[0]?.categoryName || 'N/A';
         categoryCell.textContent = category;
 
         row.appendChild(numberCell);

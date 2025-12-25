@@ -22,8 +22,6 @@ def get_access_token(): # -> str
 
     resp = requests.post(TOKEN_URL, data=body, auth=auth)
 
-    #import pdb; pdb.set_trace()
-
     resp.raise_for_status()  # will throw if something went wrong
 
     token_info = resp.json()
@@ -43,7 +41,6 @@ def search_item(item): #str -> list(dict)
     params = {
         "q": q,
         "auto_correct": "KEYWORD",
-        #"filter": "price:[0..100],priceCurrency:USD,buyingOptions:{FIXED_PRICE}",
         "sort": "price"
 
         #in the future use taxonomy api to retrieve proper categoryid
@@ -70,19 +67,6 @@ def search_item(item): #str -> list(dict)
     #now we should return a json of the list of just specific items
     resp_dct = resp.json() #convert the json response from eBay to a dict
     items = resp_dct.get('itemSummaries', [])
-    
-    # filtered_items = []
-    # for item in items:
-    #     filtered_item = {
-    #         'title': item.get('title'),
-    #         'price': item.get('price'),
-    #         'mainCategory': item.get('categories')[0].get('categoryName'),
-    #         'condition': item.get('condition'),
-    #         'seller': item.get('seller').get('username'),
-    #         'sellerFeedback': item.get('seller').get('feedbackPercentage'),
-    #         'itemWebUrl': item.get('itemWebUrl')
-    #     }
-    #     filtered_items.append(filtered_item)
      
     return items
 
@@ -98,4 +82,4 @@ def filter_print_response(response):
 if __name__ == "__main__":
     #item_name = input("Search Item: ")
     #print(filter_print_response(search_item(item_name)))
-    search_item(input("Item name:"))
+    print(search_item(input("Item name:")))
