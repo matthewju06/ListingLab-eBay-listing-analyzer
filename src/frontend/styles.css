@@ -317,7 +317,7 @@ body {
 /* Top Row: Listings by Price with Info Cards */
 .top-row {
     display: grid;
-    grid-template-columns: 1fr minmax(200px, 280px) minmax(200px, 280px);
+    grid-template-columns: 1fr minmax(200px, 280px);
     gap: 20px;
     grid-column: 2;
     grid-row: 1;
@@ -455,6 +455,14 @@ body {
     /* Ensure minimum size for readability */
     min-height: 200px;
     min-width: 0;
+    position: relative;
+}
+
+.info-card-content canvas {
+    max-width: 100%;
+    max-height: 100%;
+    width: 100% !important;
+    height: 100% !important;
 }
 
 /* Modal for Search History */
@@ -561,12 +569,12 @@ body {
 
 .history-item-text {
     font-weight: 500;
-    color: #333;
+    color: var(--text-primary);
 }
 
 .history-item-date {
     font-size: 0.85em;
-    color: #666;
+    color: var(--text-secondary);
     margin-top: 5px;
 }
 
@@ -589,7 +597,7 @@ body {
 
 .results-section h2 {
     margin: 0;
-    color: #333;
+    color: var(--text-primary);
     font-size: 1.5em;
     font-weight: 600;
 }
@@ -617,11 +625,12 @@ body {
 #resultsTable {
     width: 100%;
     border-collapse: collapse;
-    background: white;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    background: var(--bg-secondary);
+    box-shadow: 0 1px 3px var(--shadow);
     border-radius: 8px;
     overflow: hidden;
-    border: 1px solid #e5e5e5;
+    border: 1px solid var(--border-color);
+    transition: background-color 0.3s, border-color 0.3s;
 }
 
 #resultsTable thead {
@@ -639,12 +648,12 @@ body {
 }
 
 #resultsTable tbody tr {
-    border-bottom: 1px solid #e5e5e5;
+    border-bottom: 1px solid var(--border-color);
     transition: background 0.2s;
 }
 
 #resultsTable tbody tr:hover {
-    background: #f9f9f9;
+    background: var(--bg-tertiary);
 }
 
 #resultsTable tbody tr:last-child {
@@ -654,12 +663,12 @@ body {
 #resultsTable td {
     padding: 15px;
     font-size: 14px;
-    color: #333;
+    color: var(--text-primary);
 }
 
 #resultsTable td:nth-child(1) {
     font-weight: 600;
-    color: #0064D2;
+    color: var(--accent-blue);
     text-align: center;
     width: 50px;
 }
@@ -667,22 +676,22 @@ body {
 #resultsTable td:nth-child(2) {
     font-weight: 500;
     max-width: 400px;
-    color: #333;
+    color: var(--text-primary);
 }
 
 #resultsTable td:nth-child(3) {
     font-weight: 600;
-    color: #0064D2;
+    color: var(--accent-blue);
     font-size: 16px;
 }
 
 #resultsTable td:nth-child(4) {
-    color: #666;
+    color: var(--text-secondary);
     font-size: 13px;
 }
 
 #resultsTable td:nth-child(5) a {
-    color: #0064D2;
+    color: var(--accent-blue);
     text-decoration: none;
     font-weight: 500;
     transition: color 0.2s;
@@ -994,10 +1003,33 @@ body.dark-mode #resultsTable th {
 
 body.dark-mode #resultsTable td {
     border-color: var(--border-color);
+    color: var(--text-primary);
 }
 
 body.dark-mode #resultsTable tr:hover {
     background: var(--bg-tertiary);
+}
+
+body.dark-mode #resultsTable td:nth-child(1),
+body.dark-mode #resultsTable td:nth-child(3) {
+    color: var(--accent-blue);
+}
+
+body.dark-mode #resultsTable td:nth-child(2) {
+    color: var(--text-primary);
+}
+
+body.dark-mode #resultsTable td:nth-child(4) {
+    color: var(--text-secondary);
+}
+
+body.dark-mode #resultsTable td:nth-child(5) a {
+    color: var(--accent-blue);
+}
+
+body.dark-mode #resultsTable td:nth-child(5) a:hover {
+    color: var(--accent-blue);
+    opacity: 0.8;
 }
 
 body.dark-mode .modal-content {
@@ -1026,5 +1058,13 @@ body.dark-mode .history-item {
 
 body.dark-mode .history-item:hover {
     background: var(--border-color);
+}
+
+body.dark-mode .history-item-text {
+    color: var(--text-primary);
+}
+
+body.dark-mode .history-item-date {
+    color: var(--text-secondary);
 }
 

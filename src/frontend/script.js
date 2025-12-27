@@ -256,6 +256,7 @@ function populateDashboard(items) {
        drawListingsByPrice(items);
        drawPriceVsSellerScore(items);
        drawPriceVsDateListed(items);
+       drawNewVsUsed(items);
     } else {
         if (metricAvgPrice) metricAvgPrice.textContent = 'N/A';
         if (metricMedianPrice) metricMedianPrice.textContent = 'N/A';
@@ -276,7 +277,7 @@ function drawListingsByPrice(items){
             {
                 label: "Listing",
                 data: [],
-                pointRadius: 3,
+                pointRadius: 5,
             },
         ],
     };
@@ -324,7 +325,7 @@ function drawPriceVsSellerScore(items){
             {
                 label: "Listing",
                 data: [],
-                pointRadius: 3,
+                pointRadius: 5,
             },
         ],
     };
@@ -405,7 +406,7 @@ function drawPriceVsDateListed(items) {
             {
                 label: "Listings",
                 data: points,
-                pointRadius: 3,
+                pointRadius: 5,
             },
         ],
     };
@@ -431,8 +432,78 @@ function drawPriceVsDateListed(items) {
         },
     });
 }
-  
-  
+
+function drawNewVsUsed(items) {
+    const canvas = document.getElementById("new-vs-used-chart");
+    if (!canvas) {
+        console.error('Canvas new-vs-used-chart not found');
+        return;
+    }
+
+    // Count New vs Used items
+    let newCount = 0;
+    let usedCount = 0;
+    let otherCount = 0;
+
+    for (const item of items) {
+        const condition = item.condition?.toUpperCase() || '';
+        if (condition.includes('NEW')) {
+            newCount++;
+        } else if (condition.includes('USED') || condition.includes('PRE-OWNED')) {
+            usedCount++;
+        } else {
+            otherCount++;
+        }
+    }
+
+    const isDarkMode = document.body.classList.contains('dark-mode');
+    const textColor = isDarkMode ? '#e5e5e5' : '#333';
+    const gridColor = isDarkMode ? '#404040' : '#e5e5e5';
+
+    const data = {
+        labels: ['New', 'Used', 'Other'],
+        datasets: [{
+            data: [newCount, usedCount, otherCount],
+            backgroundColor: [
+                '#168a40', // Green for New
+                '#0064D2', // Blue for Used
+                '#999999'  // Grey for Other
+            ],
+            borderWidth: 0
+        }]
+    };
+
+    if (window.newVsUsedChart) window.newVsUsedChart.destroy();
+    window.newVsUsedChart = new window.Chart(canvas, {
+        type: 'doughnut',
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    labels: {
+                        color: textColor,
+                        font: {
+                            size: 12,
+                            family: 'Inter'
+                        },
+                        padding: 10
+                    }
+                },
+                tooltip: {
+                    backgroundColor: isDarkMode ? '#2d2d2d' : '#ffffff',
+                    titleColor: textColor,
+                    bodyColor: textColor,
+                    borderColor: gridColor,
+                    borderWidth: 1
+                }
+            }
+        }
+    });
+}
 
 // Show mock results for testing (remove when backend is connected)
 // function showMockResults(query) {
@@ -611,6 +682,21 @@ function toggleTheme(e) {
         localStorage.setItem('theme', 'dark');
         if (themeIcon) themeIcon.textContent = '☀️';
     }
+    
+    // Update chart colors if chart exists (after toggle, so check new state)
+    setTimeout(() => {
+        if (window.newVsUsedChart) {
+            const newIsDarkMode = document.body.classList.contains('dark-mode');
+            const textColor = newIsDarkMode ? '#e5e5e5' : '#333';
+            const gridColor = newIsDarkMode ? '#404040' : '#e5e5e5';
+            window.newVsUsedChart.options.plugins.legend.labels.color = textColor;
+            window.newVsUsedChart.options.plugins.tooltip.backgroundColor = newIsDarkMode ? '#2d2d2d' : '#ffffff';
+            window.newVsUsedChart.options.plugins.tooltip.titleColor = textColor;
+            window.newVsUsedChart.options.plugins.tooltip.bodyColor = textColor;
+            window.newVsUsedChart.options.plugins.tooltip.borderColor = gridColor;
+            window.newVsUsedChart.update();
+        }
+    }, 0);
 }
 
 // Initialize theme toggle when DOM is ready
