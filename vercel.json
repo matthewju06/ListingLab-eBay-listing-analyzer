@@ -1,0 +1,16 @@
+{
+    "builds": [
+      {
+        "src": "src/backend/api.py",
+        "use": "@vercel/python"
+      },
+      {
+        "src": "src/frontend/**/*",
+        "use": "@vercel/static"
+      }
+    ],
+    "rewrites": [
+      { "source": "/api/(.*)", "destination": "src/backend/api.py" },
+      { "source": "/(.*)", "destination": "src/frontend/$1" }
+    ]
+  }

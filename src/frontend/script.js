@@ -951,4 +951,3 @@ initThemeToggle();
 
 // Also try on DOMContentLoaded as backup
 document.addEventListener('DOMContentLoaded', initThemeToggle);
-
