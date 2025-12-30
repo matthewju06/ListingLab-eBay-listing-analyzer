@@ -10,7 +10,7 @@ from flask import Flask, request, jsonify
 app = Flask(__name__)
 
 
-@app.route('api/debug-files')
+@app.route('/api/debug-files')
 def debug_files():
     # Get the current working directory of the serverless function
     cwd = os.getcwd()
