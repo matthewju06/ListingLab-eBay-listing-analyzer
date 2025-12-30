@@ -1,6 +1,20 @@
 import sys
 import os
 
+# Get the absolute path to the folder containing api.py (src/backend)
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Add this directory to the Python path if it's not already there
+if current_dir not in sys.path:
+    sys.path.append(current_dir)
+
+# NOW try importing from main.py
+try:
+    from main import search_item
+    print("Successfully imported search_item from main.py")
+except ImportError as e:
+    print(f"FAILED to import main.py: {e}")
+
 # This line tells Python to look in the current folder for main.py
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
