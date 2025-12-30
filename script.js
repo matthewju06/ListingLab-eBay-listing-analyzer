@@ -81,7 +81,7 @@ async function handleSearch() {
     try {
         // TODO: Replace with actual API endpoint when backend is ready
         // For now, this is a placeholder that simulates the API call
-        const response = await fetch('http://localhost:6767/api/search', {
+        const response = await fetch('/api/search', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

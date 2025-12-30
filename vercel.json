@@ -10,4 +10,4 @@
       { "source": "/api/(.*)", "destination": "api.py" },
       { "source": "/(.*)", "destination": "/$1" }
     ]
-  }
+}
