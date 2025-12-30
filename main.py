@@ -8,8 +8,9 @@ CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 if not CLIENT_ID or not CLIENT_SECRET:
     raise RuntimeError("Missing CLIENT_ID / CLIENT_SECRET")
 
-TOKEN_URL = "https://api.sandbox.ebay.com/identity/v1/oauth2/token"
-SEARCH_URL = "https://api.sandbox.ebay.com/buy/browse/v1/item_summary/search"
+# Change these from .sandbox. to the live endpoints
+TOKEN_URL = "https://api.ebay.com/identity/v1/oauth2/token"
+SEARCH_URL = "https://api.ebay.com/buy/browse/v1/item_summary/search"
 
 def get_access_token(): # -> str
     # Basic Auth header: base64(client_id:client_secret)
