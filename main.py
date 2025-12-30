@@ -42,7 +42,7 @@ def search_item(item): #str -> list(dict)
     params = {
         "q": q,
         "auto_correct": "KEYWORD",
-        "sort": "price",
+        #"sort": "newlyListed",
         "limit": "200"
 
         #in the future use taxonomy api to retrieve proper categoryid
