@@ -418,8 +418,11 @@ function drawListingsByPrice(items){
                 },
             },
             interaction: {
-                mode: 'xy',
-                intersect: false
+                mode: 'nearest',
+                intersect: true
+            },
+            onHover: (event, activeElements) => {
+                event.native.target.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
             },
             plugins: {
                 zoom: {
@@ -430,19 +433,19 @@ function drawListingsByPrice(items){
                     zoom: {
                         wheel: {
                             enabled: true,
-                            speed: 0.1
+                            speed: 0.02
                         },
                         pinch: {
                             enabled: true,
-                            speed: 0.1
+                            speed: 0.02
                         },
                         mode: 'xy',
                     },
                     pan: {
                         enabled: true,
                         mode: 'xy',
-                        modifierKey: null,
-                        threshold: 10
+                        modifierKey: false,
+                        threshold: 5
                     }
                 }
             }
@@ -589,8 +592,11 @@ function drawPriceVsSellerScore(items){
                 },
             },
             interaction: {
-                mode: 'xy',
-                intersect: false
+                mode: 'nearest',
+                intersect: true
+            },
+            onHover: (event, activeElements) => {
+                event.native.target.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
             },
             plugins: {
                 zoom: {
@@ -601,19 +607,19 @@ function drawPriceVsSellerScore(items){
                     zoom: {
                         wheel: {
                             enabled: true,
-                            speed: 0.1
+                            speed: 0.02
                         },
                         pinch: {
                             enabled: true,
-                            speed: 0.1
+                            speed: 0.02
                         },
                         mode: 'xy',
                     },
                     pan: {
                         enabled: true,
                         mode: 'xy',
-                        modifierKey: null,
-                        threshold: 10
+                        modifierKey: false,
+                        threshold: 5
                     }
                 }
             }
@@ -762,8 +768,11 @@ function drawPriceVsDateListed(items) {
                 },
             },
             interaction: {
-                mode: 'xy',
-                intersect: false
+                mode: 'nearest',
+                intersect: true
+            },
+            onHover: (event, activeElements) => {
+                event.native.target.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
             },
             plugins: {
                 zoom: {
@@ -774,19 +783,19 @@ function drawPriceVsDateListed(items) {
                     zoom: {
                         wheel: {
                             enabled: true,
-                            speed: 0.1
+                            speed: 0.02
                         },
                         pinch: {
                             enabled: true,
-                            speed: 0.1
+                            speed: 0.02
                         },
                         mode: 'xy',
                     },
                     pan: {
                         enabled: true,
                         mode: 'xy',
-                        modifierKey: null,
-                        threshold: 10
+                        modifierKey: false,
+                        threshold: 5
                     }
                 }
             }
