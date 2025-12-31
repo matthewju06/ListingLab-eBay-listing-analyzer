@@ -60,7 +60,7 @@ if (downloadButton) {
 // 4. if query valid but not in ebay system, throw
 // 5.
 async function handleSearch() {
-    const query = capitalizeFirstLetter(searchInput.value.trim());
+    const query = capitalizeFirstLetters(searchInput.value.trim());
 
     // empty search query
     if (!query) {
@@ -943,6 +943,15 @@ function initThemeToggle() {
     
     // Load saved theme
     loadTheme();
+}
+
+function capitalizeFirstLetters(text){
+    const lowercased = text.toLowerCase;
+    const splits = lowercased.split(' ');
+    for (i = 0; i < splits.length; i++){
+        splits[i].charAt(0) = splits[i].charAt(0).toUpperCase();
+    }
+    return splits.join(" ")
 }
 
 // Initialize immediately (script is at end of body, so DOM should be ready)
