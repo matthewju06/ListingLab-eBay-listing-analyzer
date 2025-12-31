@@ -46,27 +46,10 @@ def search_item(item): #str -> list(dict)
         "auto_correct": "KEYWORD",
         #"sort": "newlyListed",
         "limit": "200"
-
-        #in the future use taxonomy api to retrieve proper categoryid
-        # get /category_tree/{category_tree_id}/get_category_suggestions
-        # category_tree_id = getDefaultCategoryTreeId
-        # get_category_suggestions:
-        # param :
-        #   * q
     }
 
     resp = requests.get(SEARCH_URL, headers=headers, params=params)
     resp.raise_for_status()
-
-    #format of ebay json:
-    #['itemSummaries'] -> list of items
-    # for each item:
-    # itemId, title, leafCategoryIds, categories [{...}], image {}
-    # ... price {value, currency}, itemHref, 
-    # ... seller {username, feedbackPercentage, feedbackScore},
-    # ... condition, conditionId, thumbnailImages {[...]},
-    # ... shippingOptions [{...}], buyingOptions [...], itemWebUrl,
-    # ... itemLocation, additionalImages [{}], ...
 
     #now we should return a json of the list of just specific items
     resp_dct = resp.json() 

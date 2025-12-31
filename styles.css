@@ -243,11 +243,6 @@ body {
     margin: 0 auto 20px;
 }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
 .error-message {
     background: #fff3cd;
     color: #856404;
@@ -926,10 +921,6 @@ body.dark-mode {
     --shadow-hover: rgba(0, 0, 0, 0.5);
     --accent-blue: #4a9eff;
     --accent-green: #4ade80;
-}
-
-body.dark-mode .theme-icon {
-    transform: rotate(180deg);
 }
 
 body.dark-mode .theme-toggle-btn {

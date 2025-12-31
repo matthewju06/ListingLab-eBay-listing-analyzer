@@ -10,32 +10,6 @@ from main import search_item
 
 app = Flask(__name__)
 
-# For startup debig
-# @app.route('/api/debug-files')
-# def debug_files():
-#     # Get the current working directory of the serverless function
-#     cwd = os.getcwd()
-    
-#     # List all files and folders in the current directory
-#     try:
-#         files = os.listdir(cwd)
-#         # Also check the specific folder where this file lives
-#         script_dir = os.path.dirname(os.path.abspath(__file__))
-#         script_dir_files = os.listdir(script_dir)
-        
-#         return jsonify({
-#             "current_working_directory": cwd,
-#             "files_in_cwd": files,
-#             "directory_of_api_py": script_dir,
-#             "files_in_api_py_folder": script_dir_files,
-#             "env_check": {
-#                 "EBAY_CLIENT_ID_EXISTS": "EBAY_CLIENT_ID" in os.environ,
-#                 "VERCEL_ENV": os.environ.get('VERCEL_ENV', 'not-found')
-#             }
-#         })
-#     except Exception as e:
-#         return jsonify({"error": str(e)})
-
 @app.route('/api/search', methods = ['POST', 'OPTIONS']) 
 def search(): # -> json form of dict
     #input eg -> {query: "pokemon"}

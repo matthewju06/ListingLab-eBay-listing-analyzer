@@ -60,8 +60,8 @@ if (downloadButton) {
 // 4. if query valid but not in ebay system, throw
 // 5.
 async function handleSearch() {
-    const query = searchInput.value.trim();
-    
+    const query = capitalizeFirstLetter(searchInput.value.trim());
+
     // empty search query
     if (!query) {
         showError('Please enter a product name to search.');
@@ -94,7 +94,6 @@ async function handleSearch() {
         if (!response.ok) {
             throw new Error(`Search failed: ${response.statusText}`);
         }
-
         const data = await response.json();
         displayResults(data, query);
 
@@ -850,10 +849,10 @@ function loadTheme() {
     const themeIcon = getThemeIcon();
     if (savedTheme === 'dark') {
         document.body.classList.add('dark-mode');
-        if (themeIcon) themeIcon.textContent = '☀️';
+        if (themeIcon) themeIcon.textContent = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>';
     } else {
         document.body.classList.remove('dark-mode');
-        if (themeIcon) themeIcon.textContent = '🌙';
+        if (themeIcon) themeIcon.textContent = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>';
     }
 }
 
@@ -870,11 +869,11 @@ function toggleTheme(e) {
     if (isDarkMode) {
         document.body.classList.remove('dark-mode');
         localStorage.setItem('theme', 'light');
-        if (themeIcon) themeIcon.textContent = '🌙';
+        if (themeIcon) themeIcon.textContent = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>';
     } else {
         document.body.classList.add('dark-mode');
         localStorage.setItem('theme', 'dark');
-        if (themeIcon) themeIcon.textContent = '☀️';
+        if (themeIcon) themeIcon.textContent = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>';
     }
     
     // Update chart colors if charts exist (after toggle, so check new state)
