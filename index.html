@@ -13,7 +13,7 @@
 
     <header class="main-header">
         <div class="header-content">
-            <h1 class="logo">ListingLab</h1>
+            <h1 class="logo unselectable-text">ListingLab</h1>
             <div class="search-box">
                 <div class="search-input-container">
                     <input 
@@ -56,23 +56,23 @@
                 <!-- Left Sidebar: Metric Cards -->
                 <div class="left-sidebar">
                     <div class="metric-card">
-                        <div class="metric-label">Total Listings</div>
+                        <div class="metric-label unselectable-text">Total Listings</div>
                         <div class="metric-value" id="metricTotalListings">-</div>
                     </div>
                     <div class="metric-card">
-                        <div class="metric-label">Average Price</div>
+                        <div class="metric-label unselectable-text">Average Price</div>
                         <div class="metric-value" id="metricAvgPrice">-</div>
                     </div>
                     <div class="metric-card">
-                        <div class="metric-label">Median Price</div>
+                        <div class="metric-label unselectable-text">Median Price</div>
                         <div class="metric-value" id="metricMedianPrice">-</div>
                     </div>
                     <div class="metric-card">
-                        <div class="metric-label">Min Price</div>
+                        <div class="metric-label unselectable-text">Min Price</div>
                         <div class="metric-value" id="metricMinPrice">-</div>
                     </div>
                     <div class="metric-card">
-                        <div class="metric-label">Max Price</div>
+                        <div class="metric-label unselectable-text">Max Price</div>
                         <div class="metric-value" id="metricMaxPrice">-</div>
                     </div>
                 </div>
@@ -80,15 +80,15 @@
                 <!-- Top Row: Listings by Price with Info Cards -->
                 <div class="top-row">
                     <div class="chart-panel dot-plot" id="chartListingsByPrice">
-                        <h3 class="chart-title"># Listings by Price</h3>
-                        <p class="chart-subtitle">Price distribution</p>
+                        <h3 class="chart-title unselectable-text"># Listings by Price</h3>
+                        <p class="chart-subtitle unselectable-text">Price distribution</p>
                         <div class="chart-placeholder">
                             <canvas id="listing-by-price"></canvas>
                             <script type="module" src="script.js"></script>
                         </div>
                     </div>
                     <div class="info-card">
-                        <h3 class="info-card-title">New vs Used</h3>
+                        <h3 class="info-card-title unselectable-text">New vs Used</h3>
                         <div class="info-card-content" id="cardNewVsUsed">
                             <canvas id="new-vs-used-chart"></canvas>
                         </div>
@@ -98,16 +98,16 @@
                 <!-- Main Content: Chart Panels (2x2 grid) -->
                 <div class="main-content">
                     <div class="chart-panel large" id="chartPriceVsSeller">
-                        <h3 class="chart-title">Price vs Seller Score</h3>
-                        <p class="chart-subtitle">Scatter plot</p>
+                        <h3 class="chart-title unselectable-text">Price vs Seller Score</h3>
+                        <p class="chart-subtitle unselectable-text">Scatter plot</p>
                         <div class="chart-placeholder">
                             <canvas id="price-vs-seller-score"></canvas>
                             <script type="module" src="script.js"></script>
                         </div>
                     </div>
                     <div class="chart-panel large" id="chartPriceByDate">
-                        <h3 class="chart-title">Price by Listing Date</h3>
-                        <p class="chart-subtitle">Time series</p>
+                        <h3 class="chart-title unselectable-text">Price by Listing Date</h3>
+                        <p class="chart-subtitle unselectable-text">Time series</p>
                         <div class="chart-placeholder">
                             <canvas id="price-vs-date"></canvas>
                             <script type="module" src="script.js"></script>
@@ -120,7 +120,7 @@
         <!-- Results Table (existing functionality) -->
         <div id="resultsSection" class="results-section" style="display: none;">
             <div class="results-header">
-                <h2>Search Results</h2>
+                <h2 class="unselectable-text">Search Results </h2>
                 <button class="download-btn">Download All Data</button>
             </div>
             <div id="resultsTableContainer">
