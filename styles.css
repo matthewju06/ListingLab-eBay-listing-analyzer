@@ -733,7 +733,6 @@ button {
     background: var(--bg-tertiary);
     box-shadow: 0 1px 3px var(--shadow);
     border-radius: 8px;
-    overflow: hidden;
     border: 1px solid var(--border-color);
     transition: background-color 0.3s, border-color 0.3s;
 }
@@ -751,9 +750,11 @@ button {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     position: sticky;
-    top: 0;
-    z-index: 10;
-    background: #333333;
+    top: -1px;
+    z-index: 100;
+    background: #333333 !important;
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
 }
 
 #resultsTable tbody tr {
@@ -1124,12 +1125,14 @@ body.light-mode #resultsTable thead {
 }
 
 body.light-mode #resultsTable th {
-    background: #d0d0d0;
+    background: #d0d0d0 !important;
     color: var(--text-primary);
     border-color: var(--border-color);
     position: sticky;
-    top: 0;
-    z-index: 10;
+    top: -1px;
+    z-index: 100;
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
 }
 
 body.light-mode #resultsTable tbody tr {
