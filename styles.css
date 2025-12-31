@@ -702,7 +702,7 @@ button {
 #resultsTableContainer {
     overflow-x: auto;
     overflow-y: auto;
-    max-height: 550px; /* Shows approximately 7 rows (header + 7 data rows) */
+    max-height: 600px; /* Shows approximately 7 rows (header + 7 data rows) */
     border-radius: 8px;
 }
 
