@@ -398,10 +398,11 @@ function drawListingsByPrice(items){
                 zoom: {
                     zoom: {
                         wheel: {
-                            enabled: true,
+                            enabled: false,
                         },
                         pinch: {
-                            enabled: true
+                            enabled: true,
+                            speed: 0.1
                         },
                         mode: 'xy',
                     },
@@ -557,10 +558,11 @@ function drawPriceVsSellerScore(items){
                 zoom: {
                     zoom: {
                         wheel: {
-                            enabled: true,
+                            enabled: false,
                         },
                         pinch: {
-                            enabled: true
+                            enabled: true,
+                            speed: 0.1
                         },
                         mode: 'xy',
                     },
@@ -718,10 +720,11 @@ function drawPriceVsDateListed(items) {
                 zoom: {
                     zoom: {
                         wheel: {
-                            enabled: true,
+                            enabled: false,
                         },
                         pinch: {
-                            enabled: true
+                            enabled: true,
+                            speed: 0.1
                         },
                         mode: 'xy',
                     },

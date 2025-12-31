@@ -461,7 +461,7 @@ body {
 .info-card-title {
     font-size: 0.95em;
     font-weight: 600;
-    color: #333;
+    color: var(--text-primary);
     margin-bottom: 12px;
     flex-shrink: 0;
 }
@@ -660,7 +660,7 @@ body {
 
 #resultsTable thead {
     background: #333333;
-    color: white;
+    color: var(--text-primary);
 }
 
 #resultsTable th {
@@ -1023,7 +1023,7 @@ body.light-mode .chart-subtitle {
 }
 
 body.light-mode .metric-label {
-    color: var(--text-secondary);
+    color: var(--text-primary);
 }
 
 body.light-mode .home-title {
