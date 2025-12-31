@@ -207,7 +207,7 @@ function displayResults(data, query) {
             link.href = itemUrl;
             link.target = '_blank';
             link.rel = 'noopener noreferrer';
-            link.textContent = 'Listing';
+            link.textContent = 'eBay Link';
             linkCell.appendChild(link);
         } else {
             linkCell.textContent = 'N/A';

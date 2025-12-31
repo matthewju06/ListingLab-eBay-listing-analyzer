@@ -740,6 +740,9 @@ button {
 #resultsTable thead {
     background: #333333;
     color: var(--text-primary);
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 #resultsTable th {
@@ -1116,6 +1119,9 @@ body.light-mode #resultsTable {
 body.light-mode #resultsTable thead {
     background: #d0d0d0;
     color: var(--text-primary);
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 body.light-mode #resultsTable th {
