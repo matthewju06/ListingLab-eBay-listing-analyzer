@@ -36,6 +36,7 @@ const homePage = document.getElementById('homePage');
 const historyButton = document.getElementById('historyButton');
 const historyModal = document.getElementById('historyModal');
 const closeHistoryModal = document.getElementById('closeHistoryModal');
+const clearHistoryBtn = document.getElementById('clearHistoryBtn');
 const historyList = document.getElementById('historyList');
 const dashboardTitle = document.getElementById("dashboardTitle")
 
@@ -62,6 +63,12 @@ historyButton.addEventListener('click', showHistoryModal);
 
 // Handle close history modal
 closeHistoryModal.addEventListener('click', hideHistoryModal);
+
+// Handle clear history button
+clearHistoryBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    clearHistory(e);
+});
 
 // Close modal when clicking outside
 window.addEventListener('click', (e) => {
@@ -987,6 +994,19 @@ function getHistory() {
     return historyJson ? JSON.parse(historyJson) : [];
 }
 
+function clearHistory(e) {
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    const confirmed = confirm('Are you sure you want to delete all search history? This action cannot be undone.');
+    if (confirmed) {
+        localStorage.removeItem('ebaySearchHistory');
+        historyList.innerHTML = '<p class="no-history">No search history yet.</p>';
+    }
+}
+
 function showHistoryModal() {
     const history = getHistory();
     historyList.innerHTML = '';
@@ -1138,15 +1158,6 @@ function toggleTheme(e) {
             if (chart && chart.options) {
                 if (chart.options.plugins?.legend) {
                     chart.options.plugins.legend.labels.color = textColor;
-                    
-                    if (chart.options.plugins.legend.labels.font) {
-                        chart.options.plugins.legend.labels.font.family = 'Geist Mono';
-                    } else {
-                        chart.options.plugins.legend.labels.font = {
-                            family: 'Geist Mono',
-                            size: 12
-                        };
-                    }
                 }
                 if (chart.options.scales) {
                     Object.keys(chart.options.scales).forEach(scaleKey => {

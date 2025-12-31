@@ -583,14 +583,19 @@ button {
     color: var(--text-primary);
 }
 
+.modal-header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.clear-history-btn,
 .close-btn {
     background: none;
     border: none;
-    font-size: 28px;
-    font-weight: bold;
     color: var(--text-primary);
     cursor: pointer;
-    padding: 0;
+    padding: 5px;
     width: 30px;
     height: 30px;
     display: flex;
@@ -598,6 +603,18 @@ button {
     justify-content: center;
     border-radius: 4px;
     transition: background 0.2s, color 0.2s;
+}
+
+.clear-history-btn svg,
+.close-btn svg {
+    width: 20px;
+    height: 20px;
+    pointer-events: none;
+}
+
+.clear-history-btn:hover {
+    background: var(--bg-tertiary);
+    color: #ff4444;
 }
 
 .close-btn:hover {
@@ -1134,8 +1151,13 @@ body.light-mode .modal-header h2 {
     color: var(--text-primary);
 }
 
+body.light-mode .clear-history-btn,
 body.light-mode .close-btn {
     color: var(--text-primary);
+}
+
+body.light-mode .clear-history-btn:hover {
+    color: #ff4444;
 }
 
 body.light-mode .close-btn:hover {

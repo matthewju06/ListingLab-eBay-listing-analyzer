@@ -85,7 +85,6 @@
                         <p class="chart-subtitle unselectable-text">Price distribution</p>
                         <div class="chart-placeholder">
                             <canvas id="listing-by-price"></canvas>
-                            <script type="module" src="script.js"></script>
                         </div>
                     </div>
                     <div class="info-card">
@@ -103,7 +102,6 @@
                         <p class="chart-subtitle unselectable-text">Scatter plot</p>
                         <div class="chart-placeholder">
                             <canvas id="price-vs-seller-score"></canvas>
-                            <script type="module" src="script.js"></script>
                         </div>
                     </div>
                     <div class="chart-panel large" id="chartPriceByDate">
@@ -111,7 +109,6 @@
                         <p class="chart-subtitle unselectable-text">Time series</p>
                         <div class="chart-placeholder">
                             <canvas id="price-vs-date"></canvas>
-                            <script type="module" src="script.js"></script>
                         </div>
                     </div>
                 </div>
@@ -149,7 +146,14 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Search History</h2>
-                <button id="closeHistoryModal" class="close-btn">&times;</button>
+                <div class="modal-header-actions">
+                    <button id="clearHistoryBtn" class="clear-history-btn" aria-label="Clear all history">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    </button>
+                    <button id="closeHistoryModal" class="close-btn" aria-label="Close">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
             </div>
             <div class="modal-body">
                 <div id="historyList" class="history-list">
