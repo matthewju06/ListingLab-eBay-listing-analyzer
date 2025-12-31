@@ -1000,11 +1000,8 @@ function clearHistory(e) {
         e.stopPropagation();
     }
     
-    const confirmed = confirm('Are you sure you want to delete all search history? This action cannot be undone.');
-    if (confirmed) {
-        localStorage.removeItem('ebaySearchHistory');
-        historyList.innerHTML = '<p class="no-history">No search history yet.</p>';
-    }
+    localStorage.removeItem('ebaySearchHistory');
+    historyList.innerHTML = '<p class="no-history">No search history yet.</p>';
 }
 
 function showHistoryModal() {
@@ -1180,7 +1177,13 @@ function toggleTheme(e) {
 }
 
 // Initialize theme toggle when DOM is ready
+let themeToggleInitialized = false;
+
 function initThemeToggle() {
+    if (themeToggleInitialized) {
+        return; // Already initialized, don't do it again
+    }
+    
     const themeToggle = document.getElementById('themeToggle');
     
     if (!themeToggle) {
@@ -1191,21 +1194,14 @@ function initThemeToggle() {
     }
     
     console.log('Theme toggle initialized');
+    themeToggleInitialized = true;
     
-    // Handle click on button - use multiple methods to ensure it works
-    themeToggle.onclick = toggleTheme;
+    // Add event listener
     themeToggle.addEventListener('click', toggleTheme);
-    themeToggle.addEventListener('mousedown', function(e) {
-        e.preventDefault();
-        toggleTheme(e);
-    });
     
     // Load saved theme
     loadTheme();
 }
-
-// Initialize immediately (script is at end of body, so DOM should be ready)
-initThemeToggle();
 
 function capitalizeWords(str) {
     // 1. Convert the entire string to lowercase to ensure consistency
@@ -1220,7 +1216,11 @@ function capitalizeWords(str) {
     });
     
     return capitalizedWords.join(' ');
-  }
+}
 
-// Also try on DOMContentLoaded as backup
-document.addEventListener('DOMContentLoaded', initThemeToggle);
+// Initialize on DOM ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initThemeToggle);
+} else {
+    initThemeToggle();
+}
