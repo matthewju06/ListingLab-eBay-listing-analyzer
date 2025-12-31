@@ -213,6 +213,8 @@ body {
 
 .theme-icon {
     display: inline-block;
+    align-items: center;
+    justify-content: center;
     transition: transform 0.3s;
     pointer-events: none; /* Allow clicks to pass through to button */
     user-select: none;
