@@ -728,7 +728,8 @@ button {
 
 #resultsTable {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     background: var(--bg-tertiary);
     box-shadow: 0 1px 3px var(--shadow);
     border-radius: 8px;
@@ -740,9 +741,6 @@ button {
 #resultsTable thead {
     background: #333333;
     color: var(--text-primary);
-    position: sticky;
-    top: 0;
-    z-index: 10;
 }
 
 #resultsTable th {
@@ -752,6 +750,10 @@ button {
     font-size: 14px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #333333;
 }
 
 #resultsTable tbody tr {
@@ -1119,15 +1121,15 @@ body.light-mode #resultsTable {
 body.light-mode #resultsTable thead {
     background: #d0d0d0;
     color: var(--text-primary);
-    position: sticky;
-    top: 0;
-    z-index: 10;
 }
 
 body.light-mode #resultsTable th {
     background: #d0d0d0;
     color: var(--text-primary);
     border-color: var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 body.light-mode #resultsTable tbody tr {
