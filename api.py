@@ -8,7 +8,11 @@ if api_dir not in sys.path:
     sys.path.append(api_dir)
 from main import search_item 
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder=".", static_url_path="")
+
+@app.route("/")
+def index():
+    return app.send_static_file("index.html")
 
 @app.route('/api/search', methods = ['POST', 'OPTIONS']) 
 def search(): # -> json form of dict
@@ -36,6 +40,6 @@ def add_cors_headers(response):
     return response
 
 # Uncomment for local deployment
-# if __name__ == '__main__':
-#     port = int(os.environ.get("PORT", 6767))
-#     app.run(debug=True, host='0.0.0.0', port=port)
+if __name__ == '__main__':
+    port = int(os.environ.get("PORT", 8000))
+    app.run(debug=True, host='0.0.0.0', port=port)

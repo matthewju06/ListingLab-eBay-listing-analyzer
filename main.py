@@ -2,7 +2,8 @@ import requests, os
 import statistics
 
 # No need to load_dotenv() on Vercel; it's handled by the platform
-# load_dotenv()
+from dotenv import load_dotenv
+load_dotenv()
 
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
@@ -44,7 +45,7 @@ def search_item(item): #str -> list(dict). search_item(item, min, max, category,
     params = {
         "q": q,
         "auto_correct": "KEYWORD",
-        #"sort": "newlyListed",
+        #"sort": "", default is bestMatch
         "limit": "200"
     }
 
@@ -54,11 +55,12 @@ def search_item(item): #str -> list(dict). search_item(item, min, max, category,
     #now we should return a json of the list of just specific items
     resp_dct = resp.json() 
     raw_items = resp_dct.get('itemSummaries', []) 
-    items = remove_price_outliers(raw_items)
+    print(raw_items[1])
+    items = sort_items(remove_outliers(raw_items))
      
     return items
 
-def remove_price_outliers(items):
+def remove_outliers(items):
     if not items or len(items) < 4:
         return items
         
@@ -82,18 +84,31 @@ def remove_price_outliers(items):
     q3 = statistics.quantiles(prices, n=4)[2]
     iqr = q3 - q1
     
-    upper_bound = q3 + (1.5 * iqr)
-    lower_bound = q1 - (1.5 * iqr)
+    upper_bound = q3 + (0.8 * iqr)
+    lower_bound = q1 - (0.8 * iqr)
 
-    # Return filtered items based on price
+    # Return filtered items based on price and if seller score is realistic (above 75%)
     def is_valid(item):
         try:
-            p = float(item.get('price', {}).get('value', 0))
-            return lower_bound <= p <= upper_bound
+            price = float(item.get('price', {}).get('value', 0))
+            score = float(item.get('seller', {}).get('feedbackPercentage', 0))
+            return lower_bound <= price <= upper_bound and score >= 75.0
         except:
             return False
 
-    return [i for i in items if is_valid(i)]
+    return [item for item in items if is_valid(item)]
+    
+
+def sort_items(items):
+    def price_int(item):
+        try:
+            return float(item.get('price', {}).get('value', 0))
+        except:
+            return 0.0
+        
+    return sorted(
+        items,
+        key = price_int)
 
 # when you run this file, it will test and print in console
 # if __name__ == "__main__":

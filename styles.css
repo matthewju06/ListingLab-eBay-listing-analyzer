@@ -23,7 +23,7 @@
 }
 
 body {
-    font-family: 'Geist Mono', 'Courier New', monospace;
+    font-family: "Segoe UI", Arial, sans-serif;
     background: var(--bg-primary);
     min-height: 100vh;
     color: var(--text-primary);
@@ -54,6 +54,7 @@ body {
 .home-title {
     font-size: 4em;
     font-weight: 700;
+    font-family: 'Geist Mono', 'Courier New', monospace;
     color: #0064D2;
     margin: 0;
 }
@@ -91,6 +92,7 @@ body {
 .logo {
     font-size: 1.8em;
     font-weight: 700;
+    font-family: 'Geist Mono', 'Courier New', monospace;
     color: var(--accent-blue);
     margin: 0;
     white-space: nowrap;
@@ -126,7 +128,6 @@ body {
 #searchInput {
     width: 100%;
     padding: 0 20px;
-    font-family: 'Geist Mono', 'Courier New', monospace;
     font-size: 16px;
     line-height: 1.2;
     background: transparent;
@@ -139,20 +140,12 @@ body {
     box-sizing: border-box;
 }
 
-input {
-    font-family: 'Geist Mono', 'Courier New', monospace;
-}
-
 #searchInput:focus {
     background: var(--bg-secondary);
 }
 
 #searchInput::placeholder {
     color: var(--text-tertiary);
-}
-
-button {
-    font-family: 'Geist Mono', 'Courier New', monospace;
 }
 
 #searchButton {

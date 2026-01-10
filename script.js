@@ -112,8 +112,6 @@ async function handleSearch() {
     searchButton.disabled = true;
 
     try {
-        // TODO: Replace with actual API endpoint when backend is ready
-        // For now, this is a placeholder that simulates the API call
         const response = await fetch('/api/search', {
             method: 'POST',
             headers: {
@@ -193,7 +191,7 @@ function displayResults(data, query) {
                 priceCurrency = '$';
             }
         }
-        priceCell.textContent = priceValue !== 'N/A' ? `${priceCurrency} ${priceValue}` : 'N/A';
+        priceCell.textContent = priceValue !== 'N/A' ? `${priceCurrency}${priceValue}` : 'N/A';
         
         // item condition
         const conditionCell = document.createElement('td');
