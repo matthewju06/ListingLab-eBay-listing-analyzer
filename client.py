@@ -1,5 +1,6 @@
 import requests, os
 from service import filter_items
+import time
 
 # No need to load_dotenv() on Vercel; it's handled by the platform
 from dotenv import load_dotenv
@@ -14,6 +15,9 @@ if not CLIENT_ID or not CLIENT_SECRET:
 # Change these from .sandbox. to the live endpoints
 TOKEN_URL = "https://api.ebay.com/identity/v1/oauth2/token"
 SEARCH_URL = "https://api.ebay.com/buy/browse/v1/item_summary/search"
+
+token_time = None
+token = None
 
 def get_access_token(): # -> str
     auth = (CLIENT_ID, CLIENT_SECRET)
@@ -32,19 +36,22 @@ def get_access_token(): # -> str
 
 
 def search_item(item): #str -> list(dict)
-    token = get_access_token() 
+    # If past token does not exist yet or token age is over 100 minutes
+    if not token_time or time.perf_counter() - token_time > 6000:
+        token_time = time.perf_counter()
+        token = get_access_token() 
 
     headers = {
         "Authorization": f"Bearer {token}",
         "X-EBAY-C-MARKETPLACE-ID": "EBAY_US",
     }
 
-    q = str(item)
+    query = str(item)
 
     params = {
-        "q": q,
+        "q": query,
         "auto_correct": "KEYWORD",
-        #"sort": "", default is bestMatch
+        "fieldName" : f"[lowerBound..upperBound]"
         "limit": "200"
     }
 

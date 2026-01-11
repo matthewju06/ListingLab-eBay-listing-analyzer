@@ -126,6 +126,43 @@ body {
     align-items: center;
 }
 
+.price-range-container {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    background: var(--bg-tertiary);
+    outline: 2.5px solid white;
+    outline-offset: -2.5px;
+    border-radius: 50px;
+    height: 44px;
+    box-sizing: border-box;
+    transition: background-color 0.3s, outline-color 0.3s;
+}
+
+.price-range-container input {
+    width: 70px;
+    padding: 0 8px;
+    font-size: 14px;
+    line-height: 1.2;
+    font-family: inherit;
+    background: transparent;
+    color: var(--text-primary);
+    border: none;
+    outline: none;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.price-range-separator {
+    color: var(--text-tertiary);
+    font-weight: 600;
+}
+
+.price-range-container input::placeholder {
+    color: var(--text-tertiary);
+}
+
 #searchInput {
     width: 100%;
     padding: 0 20px;
@@ -1074,6 +1111,11 @@ body.light-mode .search-input-container {
     outline-color: var(--text-primary);
 }
 
+body.light-mode .price-range-container {
+    background: var(--bg-tertiary);
+    outline-color: var(--text-primary);
+}
+
 body.light-mode #searchInput {
     background: transparent;
     color: var(--text-primary);
@@ -1082,6 +1124,8 @@ body.light-mode #searchInput {
 body.light-mode #searchInput::placeholder {
     color: var(--text-tertiary);
 }
+
+
 
 body.light-mode .history-button-container {
     background: transparent;
