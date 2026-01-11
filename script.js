@@ -86,18 +86,33 @@ if (downloadButton) {
     });
 }
 
+
+// api.py search requester
+async function searchAPI(query) {
+    const response = await fetch('/api/search', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({query : query})
+        });
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.details || response.statusText);
+        }
+
+        return response.json() // returns data in list form
+}
+
 // Main search handler
-// 1. Resets UI
-// 2. tries a search with the query
-// 3. if query doesnt exist, throw
-// 4. if query valid but not in ebay system, throw
-// 5.
 async function handleSearch() {
     const query = searchInput.value.trim();
 
     // empty search query
     if (!query) {
         showError('Please enter a product name to search.');
+        return;
+    } else if (query.length > 80) {
+        showError('Please keep searches under 80 characters');
         return;
     }
 
@@ -112,30 +127,20 @@ async function handleSearch() {
     searchButton.disabled = true;
 
     try {
-        const response = await fetch('/api/search', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                query: query
-            })
-        });
+        const data = await searchAPI(query);
+        const items = data.itemSummaries || [];
 
-        if (!response.ok) {
-            throw new Error(`Search failed: ${response.statusText}`);
+        if (items.length === 0) {
+            showError('No results found. Try a different search term.');
+            return;
         }
-        const data = await response.json();
+
         displayResults(data, query);
 
     } catch (error) {
-        // For now, show mock data since backend isn't connected
-        // Remove this when backend is ready
-        console.log('Backend not connected');
+        showError(`Search failed. ${error.message}`);
         return;
         
-        // Uncomment this when backend is ready:
-        // showError(`Error: ${error.message}`);
     } finally {
         hideLoading();
         searchButton.disabled = false;
@@ -145,19 +150,11 @@ async function handleSearch() {
 // Display search results
 function displayResults(data, query) {
     const items = data.itemSummaries || [];
-    
-    if (items.length === 0) {
-        showError('No results found. Try a different search term.');
-        return;
-    }
 
     dashboardTitle.innerHTML = `Overview: <span style="color: #0064D2;">${capitalizeWords(query)}</span>`;
 
     // Save to search history
     saveToHistory(query);
-
-    // Populate dashboard
-    
 
     // Clear previous results
     resultsTableBody.innerHTML = '';
@@ -399,7 +396,7 @@ function drawListingsByPrice(items){
                         color: textColor,
                         font: {
                             size: 12,
-                            family: 'Geist Mono'
+                            family: 'Hedvig Letters Sans'
                         },
                         padding: 10
                     }
@@ -412,14 +409,14 @@ function drawListingsByPrice(items){
                         display: true, 
                         text: "Price ($)",
                         font: {
-                            family: 'Geist Mono'
+                            family: 'Hedvig Letters Sans'
                         },
                         color: textColor
                     },
                     ticks: { 
                         color: textColor,
                         font: {
-                            family: 'Geist Mono'
+                            family: 'Hedvig Letters Sans'
                         }
                     },
                     grid: { color: isLightMode ? '#e5e5e5' : '#333333'}
@@ -555,7 +552,7 @@ function drawPriceVsSellerScore(items){
                         color: textColor,
                         font: {
                             size: 12,
-                            family: 'Geist Mono'
+                            family: 'Hedvig Letters Sans'
                         },
                         padding: 10
                     }
@@ -569,14 +566,14 @@ function drawPriceVsSellerScore(items){
                       display: true, 
                       text: "Seller feedback (%)",
                       font: {
-                          family: 'Geist Mono'
+                          family: 'Hedvig Letters Sans'
                       },
                       color: textColor
                   },
                   ticks: { 
                       color: textColor,
                       font: {
-                          family: 'Geist Mono'
+                          family: 'Hedvig Letters Sans'
                       }
                   },
                   grid: { color: gridColor }
@@ -586,14 +583,14 @@ function drawPriceVsSellerScore(items){
                       display: true, 
                       text: "Price ($)",
                       font: {
-                          family: 'Geist Mono'
+                          family: 'Hedvig Letters Sans'
                       },
                       color: textColor
                   },
                   ticks: { 
                       color: textColor,
                       font: {
-                          family: 'Geist Mono'
+                          family: 'Hedvig Letters Sans'
                       }
                   },
                   grid: { color: gridColor }
@@ -731,7 +728,7 @@ function drawPriceVsDateListed(items) {
                         color: textColor,
                         font: {
                             size: 12,
-                            family: 'Geist Mono'
+                            family: 'Hedvig Letters Sans'
                         },
                         padding: 10
                     }
@@ -745,14 +742,14 @@ function drawPriceVsDateListed(items) {
                     display: true, 
                     text: "Date listed",
                     font: {
-                        family: 'Geist Mono'
+                        family: 'Hedvig Letters Sans'
                     },
                     color: textColor
                 },
                 ticks: { 
                     color: textColor,
                     font: {
-                        family: 'Geist Mono'
+                        family: 'Hedvig Letters Sans'
                     }
                 },
                 grid: { color: gridColor }
@@ -762,14 +759,14 @@ function drawPriceVsDateListed(items) {
                     display: true, 
                     text: "Price ($)",
                     font: {
-                        family: 'Geist Mono'
+                        family: 'Hedvig Letters Sans'
                     },
                     color: textColor
                 },
                 ticks: { 
                     color: textColor,
                     font: {
-                        family: 'Geist Mono'
+                        family: 'Hedvig Letters Sans'
                     }
                 },
                 grid: { color: gridColor }
@@ -871,7 +868,7 @@ function drawNewVsUsed(items) {
                         color: textColor,
                         font: {
                             size: 12,
-                            family: 'Geist Mono'
+                            family: 'Hedvig Letters Sans'
                         },
                         padding: 10
                     }
@@ -883,10 +880,10 @@ function drawNewVsUsed(items) {
                     borderColor: gridColor,
                     borderWidth: 1,
                     titleFont: {
-                        family: 'Geist Mono'
+                        family: 'Hedvig Letters Sans'
                     },
                     bodyFont: {
-                        family: 'Geist Mono'
+                        family: 'Hedvig Letters Sans'
                     }
                 }
             }

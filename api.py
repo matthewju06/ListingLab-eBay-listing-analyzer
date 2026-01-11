@@ -1,15 +1,10 @@
-import sys
 import os
 from flask import Flask, request, jsonify
-
-# This line tells Python to look in the current folder for main.py
-api_dir = os.path.dirname(os.path.abspath(__file__))
-if api_dir not in sys.path:
-    sys.path.append(api_dir)
-from main import search_item 
+from client import search_item 
 
 app = Flask(__name__, static_folder=".", static_url_path="")
 
+# Mainly for local development
 @app.route("/")
 def index():
     return app.send_static_file("index.html")
@@ -22,15 +17,15 @@ def search(): # -> json form of dict
 
     # if request.is_json:
     data = request.get_json()
-    query = data.get('query')
+    if data is None:
+        return jsonify({"error": "Bad request", "details": "Missing JSON body"}), 400
+
+    query = data.get('query', '')
+    if not isinstance(query, str) or not query.strip():
+        return jsonify({"error": "Bad request", "details": "Missing query"}), 400
+
     item_list = search_item(query)
-    # Send back to JS
     return jsonify({'itemSummaries': item_list})
-    # else:
-    #     #get form-encoded data
-    #     query = request.form.get('query')
-    #     item_list = search_item(query)
-    #     return jsonify({'itemSummaries': item_list})
     
 @app.after_request
 def add_cors_headers(response):

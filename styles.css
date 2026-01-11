@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Hedvig+Letters+Sans&display=swap');
 
 * {
     margin: 0;
@@ -23,7 +24,7 @@
 }
 
 body {
-    font-family: "Segoe UI", Arial, sans-serif;
+    font-family: "Hedvig Letters Sans", sans-serif;
     background: var(--bg-primary);
     min-height: 100vh;
     color: var(--text-primary);
@@ -278,13 +279,14 @@ body {
 }
 
 .error-message {
-    background: #fff3cd;
-    color: #856404;
+    background: #ffcdcd;
+    color: #851304;
     padding: 15px 20px;
     border-radius: 8px;
-    border-left: 4px solid #ffc107;
+    border-left: 4px solid #ff0707;
     margin-bottom: 20px;
     text-align: center;
+    font-weight: 800;
 }
 
 /* Dashboard Section */
