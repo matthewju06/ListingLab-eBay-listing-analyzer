@@ -33,8 +33,8 @@ def filter_items(items):
     q3 = statistics.quantiles(prices, n=4)[2]
     iqr = q3 - q1
     
-    upper_bound = q3 + (1.0 * iqr)
-    lower_bound = q1 - (1.0 * iqr)
+    upper_bound = q3 + (1.2 * iqr)
+    lower_bound = q1 - (1.2 * iqr)
 
     # Return filtered items based on price and if seller score is realistic (above 75%)
     def is_valid(item):

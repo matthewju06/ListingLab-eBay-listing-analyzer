@@ -26,9 +26,9 @@
                     >
                 </div>
                 <div class="price-range-container">
-                    <input type="number" id="minPriceInput" placeholder="Min"min="0"step="0.01">
+                    <input type="number" id="minPriceInput" onkeydown="if(/^[eE.\+\-]$/.test(event.key)) event.preventDefault();"  placeholder="Min"min="0"step="0.01">
                     <span class="price-range-separator">-</span>
-                    <input type="number" id="maxPriceInput" placeholder="Max"min="0"step="0.01"
+                    <input type="number" id="maxPriceInput" onkeydown="if(/^[eE.\+\-]$/.test(event.key)) event.preventDefault();" placeholder="Max"min="0"step="0.01"
                     >
                 </div>
                 <button id="searchButton" type="button" class="unselectable-text">Search</button>

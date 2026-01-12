@@ -26,6 +26,8 @@ if (document.readyState === 'loading') {
 
 // DOM elements
 const searchInput = document.getElementById('searchInput');
+const minPriceInput = document.getElementById('minPriceInput');
+const maxPriceInput = document.getElementById('maxPriceInput');
 const searchButton = document.getElementById('searchButton');
 const loadingIndicator = document.getElementById('loadingIndicator');
 const errorMessage = document.getElementById('errorMessage');
@@ -78,11 +80,15 @@ window.addEventListener('click', (e) => {
 });
 
 // api.py search requester
-async function searchAPI(query) {
+async function searchAPI(query, minPrice, maxPrice) {
     const response = await fetch('/api/search', {
             method: 'POST',
             headers: {'Content-Type': 'application/json',},
-            body: JSON.stringify({query : query})
+            body: JSON.stringify({
+                query : query,
+                minPrice : minPrice,
+                maxPrice : maxPrice
+            })
         });
 
         if (!response.ok) {
@@ -96,13 +102,24 @@ async function searchAPI(query) {
 // Main search handler
 async function handleSearch() {
     const query = searchInput.value.trim();
+    let minPrice = minPriceInput.value.trim();
+    let maxPrice = maxPriceInput.value.trim();
+    
+    if (minPrice === "") {
+        minPrice = '0';
+    }
 
     // empty search query
     if (!query) {
-        showError('Please enter a product name to search.');
+        showError('Please enter a product name');
         return;
     } else if (query.length > 80) {
         showError('Please keep searches under 80 characters');
+        return;
+    }
+
+    if (maxPrice !== "" && Number(maxPrice) <= Number(minPrice)) {
+        showError('Please enter a product name and a valid price range.');
         return;
     }
 
@@ -117,7 +134,7 @@ async function handleSearch() {
     searchButton.disabled = true;
 
     try {
-        const data = await searchAPI(query);
+        const data = await searchAPI(query, minPrice, maxPrice);
         const items = data.itemSummaries || [];
 
         if (items.length === 0) {

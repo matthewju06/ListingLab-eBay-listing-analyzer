@@ -35,7 +35,8 @@ def get_access_token(): # -> str
     return token_info["access_token"]
 
 
-def search_item(item): #str -> list(dict)
+def search_item(item, minPrice, maxPrice): #str -> list(dict)
+    global token_time, token
     # If past token does not exist yet or token age is over 100 minutes
     if not token_time or time.perf_counter() - token_time > 6000:
         token_time = time.perf_counter()
@@ -51,8 +52,9 @@ def search_item(item): #str -> list(dict)
     params = {
         "q": query,
         "auto_correct": "KEYWORD",
-        "fieldName" : f"[lowerBound..upperBound]"
+        "filter" : f'price:[{minPrice}..{maxPrice}],priceCurrency:USD',
         "limit": "200"
+        #"offset": f"{200*(page-1)}"
     }
 
     resp = requests.get(SEARCH_URL, headers=headers, params=params)

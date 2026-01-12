@@ -21,10 +21,12 @@ def search(): # -> json form of dict
         return jsonify({"error": "Bad request", "details": "Missing JSON body"}), 400
 
     query = data.get('query', '')
+    minPrice = data.get('minPrice', '0')
+    maxPrice = data.get('maxPrice', '')
     if not isinstance(query, str) or not query.strip():
         return jsonify({"error": "Bad request", "details": "Missing query"}), 400
 
-    item_list = search_item(query)
+    item_list = search_item(query, minPrice, maxPrice)
     return jsonify({'itemSummaries': item_list})
     
 @app.after_request
