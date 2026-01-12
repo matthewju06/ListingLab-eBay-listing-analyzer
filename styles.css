@@ -115,7 +115,7 @@ body {
     flex: 1;
     background: var(--bg-tertiary);
     border: none;
-    outline: 2.5px solid white;
+    outline: 2.5px solid var(--text-primary);
     outline-offset: -2.5px;
     border-radius: 50px;
     padding: 4px;
@@ -132,7 +132,7 @@ body {
     gap: 6px;
     padding: 4px 8px;
     background: var(--bg-tertiary);
-    outline: 2.5px solid white;
+    outline: 2.5px solid var(--text-primary);
     outline-offset: -2.5px;
     border-radius: 50px;
     height: 44px;
