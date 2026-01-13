@@ -1,5 +1,5 @@
 import requests, os
-from service import filter_items
+from .services import filter_items
 import time
 
 # No need to load_dotenv() on Vercel; it's handled by the platform
@@ -54,7 +54,7 @@ def search_item(item, minPrice, maxPrice): #str -> list(dict)
         "auto_correct": "KEYWORD",
         "filter" : f'price:[{minPrice}..{maxPrice}],priceCurrency:USD',
         "limit": "200"
-        #"offset": f"{200*(page-1)}"
+        #"offset": f"{200*(page-1)}" #for pagination
     }
 
     resp = requests.get(SEARCH_URL, headers=headers, params=params)
@@ -65,5 +65,6 @@ def search_item(item, minPrice, maxPrice): #str -> list(dict)
     raw_items = resp_dct.get('itemSummaries', []) 
 
     items = filter_items(raw_items)
+    print(items[0])
      
     return items

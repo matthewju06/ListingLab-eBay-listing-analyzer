@@ -8,7 +8,15 @@ A lightweight eBay listing explorer: search, filter by price range, visualize di
 
 ---
 
-## ✨ Features
+## AI assistance
+
+Some UI/CSS and documentation text were drafted with AI assistance and then edited/tested by me.
+
+All project decisions, backend feature implementations, and final UI behaviors were created by me.
+
+---
+
+## Features
 
 - Search eBay listings with optional **min/max price**
 - Instant **summary stats** (count, avg/median/min/max)
@@ -18,13 +26,13 @@ A lightweight eBay listing explorer: search, filter by price range, visualize di
 
 ---
 
-## 🚀 Live Demo
+## Live Demo
 
 - https://listing-lab.vercel.app/
 
 ---
 
-## 🧱 Tech Stack
+## Tech Stack
 
 - **Frontend:** Vanilla HTML/CSS/JS + Chart.js (CDN)
 - **Backend:** Python + Flask API (`/api/search`)
@@ -32,7 +40,9 @@ A lightweight eBay listing explorer: search, filter by price range, visualize di
 
 ---
 
-## 🛠️ Run Locally
+## Run Locally
+
+> Note: ListingLab queries the eBay Browse API. Local runs require your own eBay API credentials via environment variables.
 
 ### 1) Prereqs
 - Python 3.10+ recommended
@@ -61,7 +71,7 @@ Open: http://localhost:8000
 
 ---
 
-## 🔌 API
+## API
 
 ### `POST /api/search`
 
@@ -88,14 +98,15 @@ Open: http://localhost:8000
 
 ---
 
-## 🔒 Open-source safety (read this before going public)
+## Open-source safety (read this before going public)
 
 If you make the repo public, keep it safe with these basics:
 
-- ✅ Never commit secrets (keep `CLIENT_ID` / `CLIENT_SECRET` only in `.env` locally + Vercel env vars)
-- ✅ Restrict CORS to your domain (avoid `*` in production)
-- ✅ Add rate limiting on `/api/search` (prevents abuse)
-- ✅ Consider simple caching for repeated queries
+- Never commit secrets (keep `CLIENT_ID` / `CLIENT_SECRET` only in `.env` locally + Vercel env vars)
+- Restrict CORS to your domain (avoid `*` in production)
+- Add rate limiting on `/api/search` (prevents abuse)
+- Consider simple caching for repeated queries
+- Respect eBay API rate limits and terms; consider caching and rate limiting for production.
 
 <details>
   <summary><b>Should I make this repo public?</b></summary>
@@ -111,7 +122,7 @@ If you make the repo public, keep it safe with these basics:
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
 - Pagination + more filters (condition, category, shipping)
 - Caching + rate limiting
@@ -120,9 +131,6 @@ If you make the repo public, keep it safe with these basics:
 
 ---
 
-## 📄 License
-
-Pick one:
 ## License
 
 Source-available (Non-Commercial / No-Redistribution / No-Public-Deployment). See [`LICENSE`](LICENSE).

@@ -82,21 +82,21 @@ window.addEventListener('click', (e) => {
 // api.py search requester
 async function searchAPI(query, minPrice, maxPrice) {
     const response = await fetch('/api/search', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json',},
-            body: JSON.stringify({
-                query : query,
-                minPrice : minPrice,
-                maxPrice : maxPrice
-            })
-        });
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', },
+        body: JSON.stringify({
+            query: query,
+            minPrice: minPrice,
+            maxPrice: maxPrice
+        })
+    });
 
-        if (!response.ok) {
-            const err = await response.json().catch(() => ({}));
-            throw new Error(err.details || response.statusText);
-        }
+    if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.details || response.statusText);
+    }
 
-        return response.json() // returns data in list form
+    return response.json() // returns data in list form
 }
 
 // Main search handler
@@ -104,7 +104,7 @@ async function handleSearch() {
     const query = searchInput.value.trim();
     let minPrice = minPriceInput.value.trim();
     let maxPrice = maxPriceInput.value.trim();
-    
+
     if (minPrice === "") {
         minPrice = '0';
     }
@@ -128,7 +128,7 @@ async function handleSearch() {
     hideResults();
     hideDashboard();
     hideHomePage();
-    
+
     // Show loading state
     showLoading();
     searchButton.disabled = true;
@@ -147,7 +147,7 @@ async function handleSearch() {
     } catch (error) {
         showError(`Search failed. ${error.message}`);
         return;
-        
+
     } finally {
         hideLoading();
         searchButton.disabled = false;
@@ -165,7 +165,7 @@ function displayResults(data, query) {
     dashboardTitle.innerHTML = `Overview: <span style="color: #0064D2;">${capitalizeWords(query)}</span>`;
 
     // Save to search history
-    saveToHistory(query);
+    saveToHistory(query, minPriceInput.value.trim(), maxPriceInput.value.trim());
 
     // Clear previous results
     resultsTableBody.innerHTML = '';
@@ -173,15 +173,18 @@ function displayResults(data, query) {
     // Populate table with results (existing logic)
     items.forEach((item, index) => {
         const row = document.createElement('tr');
-        
+
         // item number (row num)
         const numberCell = document.createElement('td');
         numberCell.textContent = index + 1;
-        
+
+        const imageCell = document.createElement('td');
+        imageCell.innerHTML = `<img style="max-width: 60px; max-height: 40px" src="${item.thumbnailImages?.[0]?.imageUrl || 'https://img.icons8.com/office40/512/cancel-2.png'}">`;
+
         // item title
         const titleCell = document.createElement('td');
         titleCell.textContent = item.title || 'N/A';
-        
+
         // item price and currency
         const priceCell = document.createElement('td');
         // Handle both object and direct value formats
@@ -200,11 +203,11 @@ function displayResults(data, query) {
             }
         }
         priceCell.textContent = priceValue !== 'N/A' ? `${priceCurrency}${priceValue}` : 'N/A';
-        
+
         // item condition
         const conditionCell = document.createElement('td');
         conditionCell.textContent = item.condition || 'N/A';
-        
+
         // url cell
         const linkCell = document.createElement('td');
         const itemUrl = item.itemWebUrl || item['item link'];
@@ -231,6 +234,7 @@ function displayResults(data, query) {
         categoryCell.textContent = category;
 
         row.appendChild(numberCell);
+        row.appendChild(imageCell);
         row.appendChild(titleCell);
         row.appendChild(priceCell);
         row.appendChild(conditionCell);
@@ -246,7 +250,7 @@ function displayResults(data, query) {
 }
 
 function itemsToCsv(items) {
-    const headers = ['#','Title','Price','Condition','Link','Seller','Category'];
+    const headers = ['#', 'Title', 'Price', 'Condition', 'Link', 'Seller', 'Category'];
     const rows = items.map((item, idx) => [
         idx + 1,
         item.title || 'N/A',
@@ -258,8 +262,8 @@ function itemsToCsv(items) {
     ]);
 
     const csv = [headers, ...rows]
-    .map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
-    .join('\n');
+        .map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
+        .join('\n');
     return csv;
 }
 
@@ -297,19 +301,19 @@ function populateDashboard(items) {
             return isNaN(price) ? null : price;
         })
         .filter(price => price !== null);
-    
+
     // Populate metric cards
     if (metricTotalListings) {
         metricTotalListings.textContent = items.length;
     }
-    
+
     if (prices.length > 0) {
         // Average price
         const avgPrice = (prices.reduce((sum, p) => sum + p, 0) / prices.length).toFixed(2);
         if (metricAvgPrice) {
             metricAvgPrice.textContent = `$${avgPrice}`;
         }
-        
+
         // Median price
         const sortedPrices = [...prices].sort((a, b) => a - b);
         const medianIndex = Math.floor(sortedPrices.length / 2);
@@ -319,23 +323,23 @@ function populateDashboard(items) {
         if (metricMedianPrice) {
             metricMedianPrice.textContent = `$${medianPrice}`;
         }
-        
+
         // Min price
         const minPrice = Math.min(...prices).toFixed(2);
         if (metricMinPrice) {
             metricMinPrice.textContent = `$${minPrice}`;
         }
-        
+
         // Max price
         const maxPrice = Math.max(...prices).toFixed(2);
         if (metricMaxPrice) {
             metricMaxPrice.textContent = `$${maxPrice}`;
         }
 
-       drawListingsByPrice(items);
-       drawPriceVsSellerScore(items);
-       drawPriceVsDateListed(items);
-       drawNewVsUsed(items);
+        drawListingsByPrice(items);
+        drawPriceVsSellerScore(items);
+        drawPriceVsDateListed(items);
+        drawNewVsUsed(items);
     } else {
         if (metricAvgPrice) metricAvgPrice.textContent = 'N/A';
         if (metricMedianPrice) metricMedianPrice.textContent = 'N/A';
@@ -356,7 +360,7 @@ function getConditionCategory(condition) {
     }
 }
 
-function drawListingsByPrice(items){
+function drawListingsByPrice(items) {
     const canvas = document.getElementById("listing-by-price");
     if (!canvas) {
         console.error('Canvas listing-by-price not found');
@@ -371,7 +375,7 @@ function drawListingsByPrice(items){
     const usedData = [];
     const otherData = [];
 
-    for (const item of items){
+    for (const item of items) {
         let priceVal = item.price;
         if (typeof priceVal === "object" && priceVal?.value != null) priceVal = priceVal.value;
         const price = parseFloat(priceVal);
@@ -380,7 +384,7 @@ function drawListingsByPrice(items){
 
         const conditionInfo = getConditionCategory(item.condition);
         const point = { x: price, y: 0 };
-        
+
         if (conditionInfo.category === 'New') {
             newData.push(point);
         } else if (conditionInfo.category === 'Used') {
@@ -394,7 +398,7 @@ function drawListingsByPrice(items){
         console.error("No valid points to plot.");
         return;
     }
-    
+
     const data = {
         datasets: [
             {
@@ -423,7 +427,7 @@ function drawListingsByPrice(items){
             },
         ],
     };
-    
+
     if (window.priceDotChart) window.priceDotChart.destroy();
     window.priceDotChart = new window.Chart(canvas, {
         type: "scatter",
@@ -437,8 +441,8 @@ function drawListingsByPrice(items){
                     hoverRadius: 8
                 }
             },
-            plugins: { 
-                legend: { 
+            plugins: {
+                legend: {
                     display: true,
                     position: 'bottom',
                     labels: {
@@ -449,26 +453,26 @@ function drawListingsByPrice(items){
                         },
                         padding: 10
                     }
-                } 
+                }
             },
             scales: {
                 y: { display: false },
-                x: { 
-                    title: { 
-                        display: true, 
+                x: {
+                    title: {
+                        display: true,
                         text: "Price ($)",
                         font: {
                             family: 'Hedvig Letters Sans'
                         },
                         color: textColor
                     },
-                    ticks: { 
+                    ticks: {
                         color: textColor,
                         font: {
                             family: 'Hedvig Letters Sans'
                         }
                     },
-                    grid: { color: isLightMode ? '#e5e5e5' : '#333333'}
+                    grid: { color: isLightMode ? '#e5e5e5' : '#333333' }
                 },
             },
             interaction: {
@@ -481,8 +485,8 @@ function drawListingsByPrice(items){
             plugins: {
                 zoom: {
                     limits: {
-                        x: {min: 'original', max: 'original'},
-                        y: {min: 'original', max: 'original'}
+                        x: { min: 'original', max: 'original' },
+                        y: { min: 'original', max: 'original' }
                     },
                     zoom: {
                         wheel: {
@@ -507,7 +511,7 @@ function drawListingsByPrice(items){
     });
 }
 
-function drawPriceVsSellerScore(items){
+function drawPriceVsSellerScore(items) {
     const canvas = document.getElementById("price-vs-seller-score");
     if (!canvas) {
         console.error('Canvas price-vs-seller-score not found');
@@ -523,20 +527,20 @@ function drawPriceVsSellerScore(items){
     const usedData = [];
     const otherData = [];
 
-    for (const item of items){
+    for (const item of items) {
         let priceVal = item.price;
         if (typeof priceVal === "object" && priceVal?.value != null) priceVal = priceVal.value;
         const price = parseFloat(priceVal);
 
         const feedbackRaw = item.seller?.feedbackPercentage;
         if (feedbackRaw == null) continue;
-        
+
         const feedbackPercentage = parseFloat(feedbackRaw)
         if (!Number.isFinite(price) || !Number.isFinite(feedbackPercentage)) continue;
 
         const conditionInfo = getConditionCategory(item.condition);
         const point = { x: feedbackPercentage, y: price };
-        
+
         if (conditionInfo.category === 'New') {
             newData.push(point);
         } else if (conditionInfo.category === 'Used') {
@@ -550,7 +554,7 @@ function drawPriceVsSellerScore(items){
         console.error("No valid points to plot.");
         return;
     }
-    
+
     const data = {
         datasets: [
             {
@@ -579,7 +583,7 @@ function drawPriceVsSellerScore(items){
             },
         ],
     };
-    
+
     if (window.priceVsSellerChart) window.priceVsSellerChart.destroy();
     window.priceVsSellerChart = new window.Chart(canvas, {
         type: "scatter",
@@ -593,8 +597,8 @@ function drawPriceVsSellerScore(items){
                     hoverRadius: 8
                 }
             },
-            plugins: { 
-                legend: { 
+            plugins: {
+                legend: {
                     display: true,
                     position: 'bottom',
                     labels: {
@@ -605,44 +609,44 @@ function drawPriceVsSellerScore(items){
                         },
                         padding: 10
                     }
-                } 
+                }
             },
             scales: {
                 x: {
-                  type: "linear",
-                  position: "bottom",
-                  title: { 
-                      display: true, 
-                      text: "Seller feedback (%)",
-                      font: {
-                          family: 'Hedvig Letters Sans'
-                      },
-                      color: textColor
-                  },
-                  ticks: { 
-                      color: textColor,
-                      font: {
-                          family: 'Hedvig Letters Sans'
-                      }
-                  },
-                  grid: { color: gridColor }
+                    type: "linear",
+                    position: "bottom",
+                    title: {
+                        display: true,
+                        text: "Seller feedback (%)",
+                        font: {
+                            family: 'Hedvig Letters Sans'
+                        },
+                        color: textColor
+                    },
+                    ticks: {
+                        color: textColor,
+                        font: {
+                            family: 'Hedvig Letters Sans'
+                        }
+                    },
+                    grid: { color: gridColor }
                 },
                 y: {
-                  title: { 
-                      display: true, 
-                      text: "Price ($)",
-                      font: {
-                          family: 'Hedvig Letters Sans'
-                      },
-                      color: textColor
-                  },
-                  ticks: { 
-                      color: textColor,
-                      font: {
-                          family: 'Hedvig Letters Sans'
-                      }
-                  },
-                  grid: { color: gridColor }
+                    title: {
+                        display: true,
+                        text: "Price ($)",
+                        font: {
+                            family: 'Hedvig Letters Sans'
+                        },
+                        color: textColor
+                    },
+                    ticks: {
+                        color: textColor,
+                        font: {
+                            family: 'Hedvig Letters Sans'
+                        }
+                    },
+                    grid: { color: gridColor }
                 },
             },
             interaction: {
@@ -655,8 +659,8 @@ function drawPriceVsSellerScore(items){
             plugins: {
                 zoom: {
                     limits: {
-                        x: {min: 'original', max: 'original'},
-                        y: {min: 'original', max: 'original'}
+                        x: { min: 'original', max: 'original' },
+                        y: { min: 'original', max: 'original' }
                     },
                     zoom: {
                         wheel: {
@@ -687,7 +691,7 @@ function drawPriceVsDateListed(items) {
         console.error("Canvas price-vs-date not found");
         return;
     }
-  
+
     const isLightMode = document.body.classList.contains('light-mode');
     const textColor = isLightMode ? '#333333' : '#bcbcbc';
     const gridColor = isLightMode ? '#e5e5e5' : '#333333';
@@ -696,7 +700,7 @@ function drawPriceVsDateListed(items) {
     const newData = [];
     const usedData = [];
     const otherData = [];
-  
+
     for (const item of items) {
         // x = date
         const dateRaw = item.itemCreationDate;
@@ -712,7 +716,7 @@ function drawPriceVsDateListed(items) {
 
         const conditionInfo = getConditionCategory(item.condition);
         const point = { x: t, y: price }; // x can be Date or ISO string
-        
+
         if (conditionInfo.category === 'New') {
             newData.push(point);
         } else if (conditionInfo.category === 'Used') {
@@ -721,12 +725,12 @@ function drawPriceVsDateListed(items) {
             otherData.push(point);
         }
     }
-  
+
     if (newData.length === 0 && usedData.length === 0 && otherData.length === 0) {
         console.error("No valid (date, price) points to plot.");
         return;
     }
-  
+
     const data = {
         datasets: [
             {
@@ -755,7 +759,7 @@ function drawPriceVsDateListed(items) {
             },
         ],
     };
-  
+
     if (window.priceVsDateChart) window.priceVsDateChart.destroy();
     window.priceVsDateChart = new window.Chart(canvas, {
         type: "scatter",
@@ -769,8 +773,8 @@ function drawPriceVsDateListed(items) {
                     hoverRadius: 8
                 }
             },
-            plugins: { 
-                legend: { 
+            plugins: {
+                legend: {
                     display: true,
                     position: 'bottom',
                     labels: {
@@ -781,44 +785,44 @@ function drawPriceVsDateListed(items) {
                         },
                         padding: 10
                     }
-                } 
+                }
             },
             scales: {
                 x: {
-                type: "time",
-                time: { unit: "day" },
-                title: { 
-                    display: true, 
-                    text: "Date listed",
-                    font: {
-                        family: 'Hedvig Letters Sans'
+                    type: "time",
+                    time: { unit: "day" },
+                    title: {
+                        display: true,
+                        text: "Date listed",
+                        font: {
+                            family: 'Hedvig Letters Sans'
+                        },
+                        color: textColor
                     },
-                    color: textColor
-                },
-                ticks: { 
-                    color: textColor,
-                    font: {
-                        family: 'Hedvig Letters Sans'
-                    }
-                },
-                grid: { color: gridColor }
+                    ticks: {
+                        color: textColor,
+                        font: {
+                            family: 'Hedvig Letters Sans'
+                        }
+                    },
+                    grid: { color: gridColor }
                 },
                 y: {
-                title: { 
-                    display: true, 
-                    text: "Price ($)",
-                    font: {
-                        family: 'Hedvig Letters Sans'
+                    title: {
+                        display: true,
+                        text: "Price ($)",
+                        font: {
+                            family: 'Hedvig Letters Sans'
+                        },
+                        color: textColor
                     },
-                    color: textColor
-                },
-                ticks: { 
-                    color: textColor,
-                    font: {
-                        family: 'Hedvig Letters Sans'
-                    }
-                },
-                grid: { color: gridColor }
+                    ticks: {
+                        color: textColor,
+                        font: {
+                            family: 'Hedvig Letters Sans'
+                        }
+                    },
+                    grid: { color: gridColor }
                 },
             },
             interaction: {
@@ -831,8 +835,8 @@ function drawPriceVsDateListed(items) {
             plugins: {
                 zoom: {
                     limits: {
-                        x: {min: 'original', max: 'original'},
-                        y: {min: 'original', max: 'original'}
+                        x: { min: 'original', max: 'original' },
+                        y: { min: 'original', max: 'original' }
                     },
                     zoom: {
                         wheel: {
@@ -988,24 +992,24 @@ function hideHomePage() {
 }
 
 // Search History Functions
-function saveToHistory(query) {
+function saveToHistory(query, minPrice, maxPrice) {
     // Safety check: don't save undefined/null queries
     if (!query || typeof query !== 'string' || query.trim() === '') {
         return;
     }
-    
+
     const history = getHistory();
     const timestamp = new Date().toISOString();
-    
+
     // Remove duplicate if exists
     const filteredHistory = history.filter(item => item.query.toLowerCase() !== query.toLowerCase());
-    
+
     // Add new entry at the beginning
-    filteredHistory.unshift({ query, timestamp });
-    
+    filteredHistory.unshift({ query, minPrice, maxPrice, timestamp });
+
     // Keep only last 20 searches
     const limitedHistory = filteredHistory.slice(0, 20);
-    
+
     localStorage.setItem('ebaySearchHistory', JSON.stringify(limitedHistory));
 }
 
@@ -1019,7 +1023,7 @@ function clearHistory(e) {
         e.preventDefault();
         e.stopPropagation();
     }
-    
+
     localStorage.removeItem('ebaySearchHistory');
     historyList.innerHTML = '<p class="no-history">No search history yet.</p>';
 }
@@ -1027,7 +1031,7 @@ function clearHistory(e) {
 function showHistoryModal() {
     const history = getHistory();
     historyList.innerHTML = '';
-    
+
     if (history.length === 0) {
         historyList.innerHTML = '<p class="no-history">No search history yet.</p>';
     } else {
@@ -1036,25 +1040,34 @@ function showHistoryModal() {
             historyItem.className = 'history-item';
             historyItem.addEventListener('click', () => {
                 searchInput.value = item.query;
+                minPriceInput.value = item.minPrice || '';
+                maxPriceInput.value = item.maxPrice || '';
                 hideHistoryModal();
                 handleSearch();
             });
-            
+
             const queryText = document.createElement('div');
             queryText.className = 'history-item-text';
             queryText.textContent = item.query;
-            
+
+            const rangeText = document.createElement('div');
+            rangeText.className = 'history-item-range';
+            const minLabel = item.minPrice ? `$${item.minPrice}` : 'Any';
+            const maxLabel = item.maxPrice ? `$${item.maxPrice}` : 'Any';
+            rangeText.textContent = `Min ${minLabel} · Max ${maxLabel}`;
+
             const dateText = document.createElement('div');
             dateText.className = 'history-item-date';
             const date = new Date(item.timestamp);
             dateText.textContent = date.toLocaleString();
-            
+
             historyItem.appendChild(queryText);
+            historyItem.appendChild(rangeText);
             historyItem.appendChild(dateText);
             historyList.appendChild(historyItem);
         });
     }
-    
+
     historyModal.style.display = 'block';
 }
 
@@ -1071,10 +1084,10 @@ function getThemeIcon() {
 function setThemeIcon(isLightMode) {
     const themeToggle = document.getElementById('themeToggle');
     if (!themeToggle) return;
-    
+
     const svg = themeToggle.querySelector('.theme-icon');
     if (!svg) return;
-    
+
     // Create new SVG element
     const newSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     newSvg.setAttribute('class', 'theme-icon');
@@ -1088,7 +1101,7 @@ function setThemeIcon(isLightMode) {
     newSvg.setAttribute('stroke-width', '3');
     newSvg.setAttribute('stroke-linecap', 'round');
     newSvg.setAttribute('stroke-linejoin', 'round');
-    
+
     if (isLightMode) {
         // Moon icon (to switch to dark mode - shown when in light mode)
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -1101,7 +1114,7 @@ function setThemeIcon(isLightMode) {
         circle.setAttribute('cy', '12');
         circle.setAttribute('r', '5');
         newSvg.appendChild(circle);
-        
+
         const paths = [
             'M12 1v2', 'M12 21v2', 'M4.2 4.2l1.4 1.4', 'M18.4 18.4l1.4 1.4',
             'M1 12h2', 'M21 12h2', 'M4.2 19.8l1.4-1.4', 'M18.4 5.6l1.4-1.4'
@@ -1112,7 +1125,7 @@ function setThemeIcon(isLightMode) {
             newSvg.appendChild(path);
         });
     }
-    
+
     // Replace the old SVG with the new one
     svg.parentNode.replaceChild(newSvg, svg);
 }
@@ -1135,9 +1148,9 @@ function toggleTheme(e) {
         e.preventDefault();
         e.stopPropagation();
     }
-    
+
     const isLightMode = document.body.classList.contains('light-mode');
-    
+
     if (isLightMode) {
         document.body.classList.remove('light-mode');
         localStorage.setItem('theme', 'dark');
@@ -1147,13 +1160,13 @@ function toggleTheme(e) {
         localStorage.setItem('theme', 'light');
         setThemeIcon(true);
     }
-    
+
     // Update chart colors if charts exist (after toggle, so check new state)
     setTimeout(() => {
         const newIsLightMode = document.body.classList.contains('light-mode');
         const textColor = newIsLightMode ? '#333333' : '#e5e5e5';
         const gridColor = newIsLightMode ? '#e5e5e5' : '#404040';
-        
+
         // Update donut chart
         if (window.newVsUsedChart) {
             window.newVsUsedChart.options.plugins.legend.labels.color = textColor;
@@ -1163,14 +1176,14 @@ function toggleTheme(e) {
             window.newVsUsedChart.options.plugins.tooltip.borderColor = gridColor;
             window.newVsUsedChart.update();
         }
-        
+
         // Update scatter charts
         const scatterCharts = [
             window.priceDotChart,
             window.priceVsSellerChart,
             window.priceVsDateChart
         ];
-        
+
         scatterCharts.forEach(chart => {
             if (chart && chart.options) {
                 if (chart.options.plugins?.legend) {
@@ -1203,38 +1216,38 @@ function initThemeToggle() {
     if (themeToggleInitialized) {
         return; // Already initialized, don't do it again
     }
-    
+
     const themeToggle = document.getElementById('themeToggle');
-    
+
     if (!themeToggle) {
         console.error('Theme toggle button not found');
         // Try again after a short delay in case DOM isn't ready
         setTimeout(initThemeToggle, 100);
         return;
     }
-    
+
     console.log('Theme toggle initialized');
     themeToggleInitialized = true;
-    
+
     // Add event listener
     themeToggle.addEventListener('click', toggleTheme);
-    
+
     // Load saved theme
     loadTheme();
 }
 
 function capitalizeWords(str) {
     // 1. Convert the entire string to lowercase to ensure consistency
-    const lowercasedStr = str.toLowerCase(); 
-    
+    const lowercasedStr = str.toLowerCase();
+
     // 2. Split the string into an array of words based on spaces
     const words = lowercasedStr.split(' ');
-    
+
     // 3. Use the map() method to iterate through the words array
     const capitalizedWords = words.map(word => {
-      return word.charAt(0).toUpperCase() + word.slice(1);
+        return word.charAt(0).toUpperCase() + word.slice(1);
     });
-    
+
     return capitalizedWords.join(' ');
 }
 
