@@ -133,4 +133,4 @@ If you make the repo public, keep it safe with these basics:
 
 ## License
 
-Source-available (Non-Commercial / No-Redistribution / No-Public-Deployment). See [`LICENSE`](LICENSE).
+Source-available (Non-Commercial / No-Redistribution / No-Public-Deployment). See [`LICENSE`](LICENSE.md).
