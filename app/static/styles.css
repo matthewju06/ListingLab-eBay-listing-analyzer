@@ -1074,7 +1074,8 @@ body.light-mode .history-icon-dark {
     }
 
     .search-box {
-        flex-direction: column;
+        flex-direction: row;
+        flex-wrap: wrap;
         max-width: 100%;
         gap: 10px;
     }
@@ -1085,7 +1086,18 @@ body.light-mode .history-icon-dark {
     }
 
     .price-range-container {
-        width: 100%;
+        width: calc(50% - 5px);
+        flex: none;
+    }
+
+    .price-range-container input {
+        width: 0;
+        flex: 1;
+        min-width: 0;
+    }
+
+    #searchButton {
+        width: calc(50% - 5px);
         flex: none;
     }
 
@@ -1108,7 +1120,6 @@ body.light-mode .history-icon-dark {
     }
 
     #searchInput,
-    #searchButton,
     .history-btn {
         width: 100%;
     }
