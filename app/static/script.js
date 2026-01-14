@@ -41,6 +41,14 @@ const closeHistoryModal = document.getElementById('closeHistoryModal');
 const clearHistoryBtn = document.getElementById('clearHistoryBtn');
 const historyList = document.getElementById('historyList');
 const dashboardTitle = document.getElementById("dashboardTitle")
+const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+const headerCollapsible = document.getElementById('headerCollapsible');
+
+if (mobileMenuBtn && headerCollapsible) {
+    mobileMenuBtn.addEventListener('click', () => {
+        headerCollapsible.classList.toggle('expanded');
+    });
+}
 
 
 // Metric card elements

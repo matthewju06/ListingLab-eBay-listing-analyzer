@@ -70,7 +70,7 @@ body {
     margin-bottom: 0;
     position: sticky;
     top: 0;
-    z-index: 100;
+    z-index: 200;
     box-shadow: 0 2px 4px var(--shadow);
     transition: background-color 0.3s, border-color 0.3s;
 }
@@ -110,6 +110,20 @@ body {
     gap: 15px;
     flex: 1;
     max-width: 800px;
+}
+
+.mobile-menu-btn {
+    display: none;
+}
+
+.header-top-row {
+    display: contents;
+    /* On desktop, these children just sit in the grid/flex parent */
+}
+
+.header-collapsible {
+    display: contents;
+    /* On desktop, children act as if this wrapper doesn't exist */
 }
 
 /* Pill-shaped container for search input */
@@ -1024,13 +1038,39 @@ body.light-mode .history-icon-dark {
         align-items: stretch;
     }
 
-    .logo {
-        text-align: center;
-        margin-bottom: 15px;
+    .header-top-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
     }
 
-    .home-title {
-        font-size: 2.5em;
+    .mobile-menu-btn {
+        display: block;
+        background: none;
+        border: none;
+        color: var(--text-primary);
+        cursor: pointer;
+        padding: 5px;
+    }
+
+    .header-collapsible {
+        display: none;
+        flex-direction: column;
+        gap: 15px;
+        width: 100%;
+        padding-top: 15px;
+        border-top: 1px solid var(--border-color);
+        margin-top: 10px;
+    }
+
+    .header-collapsible.expanded {
+        display: flex;
+    }
+
+    .logo {
+        text-align: left;
+        margin-bottom: 0;
     }
 
     .search-box {
@@ -1081,7 +1121,8 @@ body.light-mode .history-icon-dark {
 
     .left-sidebar {
         grid-row: auto;
-        order: 2;
+        order: 1;
+        /* Metrics first */
         width: 100%;
     }
 
@@ -1089,20 +1130,26 @@ body.light-mode .history-icon-dark {
         grid-column: 1;
         grid-row: auto;
         grid-template-columns: 1fr;
-        order: 1;
+        order: 2;
+        /* Charts after metrics */
         width: 100%;
     }
 
     .info-card {
-        width: 100%;
+        width: 70%;
+        /* "sized down by like 30%" */
         max-width: 100%;
+        margin: 0 auto;
+        /* Center it */
         height: auto;
-        min-height: 307px;
+        min-height: 215px;
+        /* ~30% less than 307px */
     }
 
     .info-card-content {
         height: auto;
-        min-height: 248px;
+        min-height: 174px;
+        /* ~30% less than 248px */
         aspect-ratio: 1;
         width: 100%;
         max-width: 100%;
