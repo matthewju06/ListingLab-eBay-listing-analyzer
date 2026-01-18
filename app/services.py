@@ -1,4 +1,5 @@
 import statistics
+from .clients import search_item #services -> clients
 
 def filter_items(items):
     if not items:
@@ -47,3 +48,21 @@ def filter_items(items):
 
 
     return [item for item in items if is_valid(item)]
+
+
+def get_items(query, minPrice, maxPrice, category=None, condition=None):
+    page = 1
+    curr_page_items = search_item(query, minPrice, maxPrice, page, category, condition)
+    
+    final_items_list = []
+
+    while (len(curr_page_items) > 0 and page <= 5):
+        final_items_list.extend(curr_page_items)
+
+        if (len(curr_page_items) < 200):
+            break
+
+        page += 1
+        curr_page_items = search_item(query, minPrice, maxPrice, page, category, condition)
+
+    return filter_items(final_items_list)

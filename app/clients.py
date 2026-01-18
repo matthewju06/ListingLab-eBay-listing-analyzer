@@ -1,5 +1,4 @@
 import requests, os
-from .services import filter_items
 import time
 
 # No need to load_dotenv() on Vercel; it's handled by the platform
@@ -9,12 +8,14 @@ load_dotenv()
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 
+
 if not CLIENT_ID or not CLIENT_SECRET:
     raise RuntimeError("Missing CLIENT_ID / CLIENT_SECRET")
 
 # Change these from .sandbox. to the live endpoints
 TOKEN_URL = "https://api.ebay.com/identity/v1/oauth2/token"
 SEARCH_URL = "https://api.ebay.com/buy/browse/v1/item_summary/search"
+TREE_ID_URL = "https://api.ebay.com/commerce/taxonomy/v1/get_default_category_tree_id"
 
 token_time = None
 token = None
@@ -35,36 +36,44 @@ def get_access_token(): # -> str
     return token_info["access_token"]
 
 
-def search_item(item, minPrice, maxPrice): #str -> list(dict)
+def search_item(query, minPrice, maxPrice, page, category, condition=None): #str -> list(dict)
     global token_time, token
     # If past token does not exist yet or token age is over 100 minutes
     if not token_time or time.perf_counter() - token_time > 6000:
         token_time = time.perf_counter()
         token = get_access_token() 
 
-    headers = {
+    oauth = {
         "Authorization": f"Bearer {token}",
         "X-EBAY-C-MARKETPLACE-ID": "EBAY_US",
     }
 
-    query = str(item)
+    # Base filter
+    filter_str = f'price:[{minPrice}..{maxPrice}],priceCurrency:USD'
+
+    # Add condition filter
+    if condition:
+        if condition == 'new':
+            filter_str += ',conditionIds:{1000|1500}' # New, New other
+        elif condition == 'used':
+            filter_str += ',conditionIds:{3000|4000|5000|6000}' # Used, Very Good, Good, Acceptable
 
     params = {
-        "q": query,
+        "q": str(query),
         "auto_correct": "KEYWORD",
-        "filter" : f'price:[{minPrice}..{maxPrice}],priceCurrency:USD',
-        "limit": "200"
-        #"offset": f"{200*(page-1)}" #for pagination
+        "filter" : filter_str,
+        "limit": "200",
+        "offset": f"{200*(page-1)}" #for pagination
     }
 
-    resp = requests.get(SEARCH_URL, headers=headers, params=params)
+    if category:
+        params['category_ids'] = category
+
+    resp = requests.get(SEARCH_URL, headers=oauth, params=params)
     resp.raise_for_status()
 
     #now we should return a json of the list of just specific items
     resp_dct = resp.json() 
-    raw_items = resp_dct.get('itemSummaries', []) 
-
-    items = filter_items(raw_items)
-    print(items[0])
+    items = resp_dct.get('itemSummaries', []) 
      
-    return items
+    return items # -> List[Dict]

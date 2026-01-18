@@ -13,16 +13,55 @@ const CONSTANTS = {
     MAX_HISTORY: 20
 };
 
+const CATEGORIES = {
+    'Any': null,
+    'Antiques': 20081,
+    'Art': 550,
+    'Baby': 2984,
+    'Books & Magazines': 267,
+    'Business & Industrial': 12576,
+    'Cameras & Photo': 625,
+    'Cell Phones & Accessories': 15032,
+    'Clothing, Shoes & Accessories': 11450,
+    'Coins & Paper Money': 11116,
+    'Collectibles': 1,
+    'Computers/Tablets & Networking': 58058,
+    'Consumer Electronics': 293,
+    'Crafts': 14339,
+    'Dolls & Bears': 237,
+    'Movies & TV': 11232,
+    'Entertainment Memorabilia': 45100,
+    'Gift Cards & Coupons': 172008,
+    'Health & Beauty': 26395,
+    'Home & Garden': 11700,
+    'Jewelry & Watches': 281,
+    'Music': 11233,
+    'Musical Instruments & Gear': 619,
+    'Pet Supplies': 1281,
+    'Pottery & Glass': 870,
+    'Sporting Goods': 888,
+    'Sports Mem, Cards & Fan Shop': 64482,
+    'Tickets & Experiences': 1305,
+    'Toys & Hobbies': 220,
+    'Travel': 3252,
+    'Video Games Consoles': 1249
+};
+
 /**
  * DOM Elements
  */
 const DOM = {
     inputs: {
         search: document.getElementById('searchInput'),
+        category: document.getElementById('categorySelect'),
         minPrice: document.getElementById('minPriceInput'),
         maxPrice: document.getElementById('maxPriceInput'),
+        condition: document.getElementById('conditionSelect'),
+
         searchBtn: document.getElementById('searchButton'),
+        filtersBtn: document.getElementById('filtersButton'),
         downloadBtn: document.getElementById('downloadButton'),
+        applyFiltersBtn: document.getElementById('applyFiltersBtn'),
     },
     sections: {
         home: document.getElementById('homePage'),
@@ -39,6 +78,8 @@ const DOM = {
         openHistory: document.getElementById('historyButton'),
         clearHistory: document.getElementById('clearHistoryBtn'),
         historyList: document.getElementById('historyList'),
+        filters: document.getElementById('filtersModal'),
+        closeFilters: document.getElementById('closeFiltersModal'),
     },
     metrics: {
         total: document.getElementById('metricTotalListings'),
@@ -62,8 +103,28 @@ const DOM = {
  */
 document.addEventListener('DOMContentLoaded', () => {
     registerZoomPlugin();
+    populateCategories();
     setupEventListeners();
 });
+
+function populateCategories() {
+    const selector = DOM.inputs.category;
+    if (!selector) return;
+
+    // Default option
+    let html = '<option value="">Any</option>';
+
+    // Convert object to array and sort alphabetically by name (excluding Auto)
+    const entries = Object.entries(CATEGORIES)
+        .filter(([key]) => key !== 'Auto')
+        .sort((a, b) => a[0].localeCompare(b[0]));
+
+    entries.forEach(([name, id]) => {
+        html += `<option value="${id}">${name}</option>`;
+    });
+
+    selector.innerHTML = html;
+}
 
 function setupEventListeners() {
     // Search Actions
@@ -72,12 +133,27 @@ function setupEventListeners() {
         if (e.key === 'Enter') handleSearch();
     });
 
+    // Filters Modal
+    if (DOM.inputs.filtersBtn) {
+        DOM.inputs.filtersBtn.addEventListener('click', () => toggleModal(DOM.modals.filters, true));
+    }
+    if (DOM.modals.closeFilters) {
+        DOM.modals.closeFilters.addEventListener('click', () => toggleModal(DOM.modals.filters, false));
+    }
+    if (DOM.inputs.applyFiltersBtn) {
+        DOM.inputs.applyFiltersBtn.addEventListener('click', () => {
+            toggleModal(DOM.modals.filters, false);
+            handleSearch();
+        });
+    }
+
     // History Modal
     DOM.modals.openHistory.addEventListener('click', showHistoryModal);
     DOM.modals.closeHistory.addEventListener('click', () => toggleModal(DOM.modals.history, false));
     DOM.modals.clearHistory.addEventListener('click', clearHistory);
     window.addEventListener('click', (e) => {
         if (e.target === DOM.modals.history) toggleModal(DOM.modals.history, false);
+        if (e.target === DOM.modals.filters) toggleModal(DOM.modals.filters, false);
     });
 
     // Mobile Menu
@@ -98,6 +174,8 @@ async function handleSearch() {
     const query = DOM.inputs.search.value.trim();
     const minPrice = DOM.inputs.minPrice.value.trim() || '0';
     const maxPrice = DOM.inputs.maxPrice.value.trim();
+    const category = DOM.inputs.category ? DOM.inputs.category.value : '';
+    const condition = DOM.inputs.condition ? DOM.inputs.condition.value : '';
 
     // Validation
     if (!query) return showError('Please enter a product name');
@@ -117,7 +195,7 @@ async function handleSearch() {
     DOM.inputs.searchBtn.disabled = true;
 
     try {
-        const data = await searchAPI(query, minPrice, maxPrice);
+        const data = await searchAPI(query, minPrice, maxPrice, category, condition);
         state.items = data.itemSummaries || [];
 
         if (state.items.length === 0) {
@@ -137,11 +215,11 @@ async function handleSearch() {
     }
 }
 
-async function searchAPI(query, minPrice, maxPrice) {
+async function searchAPI(query, minPrice, maxPrice, category, condition) {
     const response = await fetch('/api/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, minPrice, maxPrice })
+        body: JSON.stringify({ query, minPrice, maxPrice, category, condition })
     });
 
     if (!response.ok) {

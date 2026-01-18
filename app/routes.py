@@ -1,10 +1,9 @@
 import os
 from flask import Blueprint, request, jsonify, render_template
-from .clients import search_item 
+from .services import get_items #routes -> services
 
 bp = Blueprint('main', __name__)
 
-# Mainly for local development
 @bp.route("/")
 def index():
     return render_template("index.html")
@@ -21,9 +20,11 @@ def search():
     query = data.get('query', '')
     minPrice = data.get('minPrice', '0')
     maxPrice = data.get('maxPrice', '')
+    category = data.get('category', None)
+    condition = data.get('condition', None)
 
     if not isinstance(query, str) or not query.strip():
         return jsonify({"error": "Bad request", "details": "Missing query"}), 400
 
-    item_list = search_item(query, minPrice, maxPrice)
+    item_list = get_items(query, minPrice, maxPrice, category, condition)
     return jsonify({'itemSummaries': item_list})
