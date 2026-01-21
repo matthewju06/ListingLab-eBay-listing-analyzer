@@ -36,7 +36,7 @@ def get_access_token(): # -> str
     return token_info["access_token"]
 
 
-def search_item(query, minPrice, maxPrice, page, category, condition=None): #str -> list(dict)
+def search_item(query, minPrice, maxPrice, category, condition = None, page = 1, limit = 200): #str -> list(dict)
     global token_time, token
     # If past token does not exist yet or token age is over 100 minutes
     if not token_time or time.perf_counter() - token_time > 6000:
@@ -62,8 +62,8 @@ def search_item(query, minPrice, maxPrice, page, category, condition=None): #str
         "q": str(query),
         "auto_correct": "KEYWORD",
         "filter" : filter_str,
-        "limit": "200",
-        "offset": f"{200*(page-1)}" #for pagination
+        "limit": str(limit),
+        "offset": f'{200*(page-1)}' #for pagination
     }
 
     if category:
@@ -74,6 +74,6 @@ def search_item(query, minPrice, maxPrice, page, category, condition=None): #str
 
     #now we should return a json of the list of just specific items
     resp_dct = resp.json() 
-    items = resp_dct.get('itemSummaries', []) 
+    items = resp_dct.get('itemSummaries', [])
      
     return items # -> List[Dict]

@@ -58,6 +58,12 @@ const DOM = {
         maxPrice: document.getElementById('maxPriceInput'),
         condition: document.getElementById('conditionSelect'),
 
+        // New Inputs
+        priceModeRadios: document.getElementsByName('priceMode'),
+        filterStrengthRadios: document.getElementsByName('filterStrength'),
+        autoOptions: document.getElementById('autoFilterOptions'),
+        specificOptions: document.getElementById('specificPriceOptions'),
+
         searchBtn: document.getElementById('searchButton'),
         filtersBtn: document.getElementById('filtersButton'),
         downloadBtn: document.getElementById('downloadButton'),
@@ -147,6 +153,21 @@ function setupEventListeners() {
         });
     }
 
+    // New: Price Mode Toggle Logic
+    if (DOM.inputs.priceModeRadios) {
+        DOM.inputs.priceModeRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (e.target.value === 'auto') {
+                    DOM.inputs.autoOptions.style.display = 'flex';
+                    DOM.inputs.specificOptions.style.display = 'none';
+                } else {
+                    DOM.inputs.autoOptions.style.display = 'none';
+                    DOM.inputs.specificOptions.style.display = 'flex';
+                }
+            });
+        });
+    }
+
     // History Modal
     DOM.modals.openHistory.addEventListener('click', showHistoryModal);
     DOM.modals.closeHistory.addEventListener('click', () => toggleModal(DOM.modals.history, false));
@@ -172,15 +193,34 @@ function setupEventListeners() {
  */
 async function handleSearch() {
     const query = DOM.inputs.search.value.trim();
-    const minPrice = DOM.inputs.minPrice.value.trim() || '0';
-    const maxPrice = DOM.inputs.maxPrice.value.trim();
     const category = DOM.inputs.category ? DOM.inputs.category.value : '';
     const condition = DOM.inputs.condition ? DOM.inputs.condition.value : '';
+
+    // Determine Price Mode
+    let minPrice = '';
+    let maxPrice = '';
+    let filterStrength = 0;
+
+    const selectedMode = Array.from(DOM.inputs.priceModeRadios).find(r => r.checked)?.value || 'auto';
+
+    if (selectedMode === 'specific') {
+        minPrice = DOM.inputs.minPrice.value.trim();
+        maxPrice = DOM.inputs.maxPrice.value.trim();
+        filterStrength = 0; // Ignore strength if specific
+    } else {
+        // Auto Mode: Send empty prices, read strength
+        minPrice = '';
+        maxPrice = '';
+        const selectedStrength = Array.from(DOM.inputs.filterStrengthRadios).find(r => r.checked)?.value;
+        filterStrength = selectedStrength ? parseInt(selectedStrength) : 4; // Default 4
+    }
 
     // Validation
     if (!query) return showError('Please enter a product name');
     if (query.length > 80) return showError('Please keep searches under 80 characters');
-    if (maxPrice !== "" && Number(maxPrice) <= Number(minPrice)) {
+
+    // Validate range only if in Specific mode
+    if (selectedMode === 'specific' && maxPrice !== "" && Number(maxPrice) <= Number(minPrice)) {
         return showError('Please enter a valid price range.');
     }
 
@@ -195,7 +235,7 @@ async function handleSearch() {
     DOM.inputs.searchBtn.disabled = true;
 
     try {
-        const data = await searchAPI(query, minPrice, maxPrice, category, condition);
+        const data = await searchAPI(query, minPrice, maxPrice, category, condition, filterStrength);
         state.items = data.itemSummaries || [];
 
         if (state.items.length === 0) {
@@ -215,11 +255,11 @@ async function handleSearch() {
     }
 }
 
-async function searchAPI(query, minPrice, maxPrice, category, condition) {
+async function searchAPI(query, minPrice, maxPrice, category, condition, filterStrength) {
     const response = await fetch('/api/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, minPrice, maxPrice, category, condition })
+        body: JSON.stringify({ query, minPrice, maxPrice, category, condition, filterStrength })
     });
 
     if (!response.ok) {

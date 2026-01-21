@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@100..900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+/* @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap'); */
+@import url('https://fonts.googleapis.com/css2?family=Work+Sans:ital,wght@300;400;500;600;700&display=swap');
 
 * {
     margin: 0;
@@ -27,7 +28,7 @@
 }
 
 body {
-    font-family: "Inter", sans-serif;
+    font-family: "Work Sans", sans-serif;
     background: var(--bg-primary);
     min-height: 100vh;
     color: var(--text-primary);
@@ -381,10 +382,130 @@ input[type=number]::-webkit-outer-spin-button {
     color: var(--text-primary);
 }
 
+/* Filter Modal Toggle & Strength Styles */
+/* Filter Modal Toggle & Strength Styles */
+.mode-toggle-container {
+    display: flex;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    padding: 0;
+    gap: 0;
+    /* Remove gap so buttons touch */
+    height: 44px;
+    box-sizing: border-box;
+    overflow: hidden;
+    /* Ensure corners respect radius */
+}
+
+.mode-toggle-container input[type="radio"] {
+    display: none;
+}
+
+.mode-toggle-container .mode-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s, color 0.3s;
+    font-weight: 400;
+    /* Normal weight */
+    font-size: 14px;
+    color: var(--text-secondary);
+    height: 100%;
+}
+
+.mode-toggle-container input[type="radio"]:checked+.mode-btn {
+    background: var(--text-primary);
+    color: var(--bg-secondary);
+}
+
+.strength-select-container {
+    display: flex;
+    gap: 10px;
+}
+
+.strength-option {
+    flex: 1;
+    position: relative;
+    height: 44px;
+    /* Match inputs */
+}
+
+.strength-option input[type="radio"] {
+    display: none;
+}
+
+.strength-option label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+    font-weight: 400;
+    /* Normal weight */
+    color: var(--text-secondary);
+    box-sizing: border-box;
+}
+
+.strength-option input[type="radio"]:checked+label {
+    background: var(--bg-tertiary);
+    border-color: var(--text-primary);
+    box-shadow: 0 0 0 1px var(--text-primary);
+    font-weight: 400;
+    /* Normal weight */
+    color: var(--text-primary);
+}
+
 .filter-actions-row {
     margin-top: 10px;
     display: flex;
     justify-content: flex-end;
+}
+
+/* Side-by-Side Filter Layout */
+.price-filter-row {
+    display: flex;
+    gap: 15px;
+    align-items: flex-start;
+}
+
+.filter-col {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.mode-col {
+    flex: 0 0 220px;
+    /* Increased to 220px */
+}
+
+.content-col {
+    flex: 1;
+}
+
+/* Higher specificity to override .filter-group label */
+.filter-group .sub-label {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--text-secondary);
+}
+
+.dynamic-group {
+    /* Script sets display: flex, so we ensure column direction */
+    display: flex;
+    /* Added to ensure initial state matches JS toggle state */
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
 }
 
 .apply-filters-btn {

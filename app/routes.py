@@ -18,13 +18,14 @@ def search():
         return jsonify({"error": "Bad request", "details": "Missing JSON body"}), 400
 
     query = data.get('query', '')
-    minPrice = data.get('minPrice', '0')
+    minPrice = data.get('minPrice', '')
     maxPrice = data.get('maxPrice', '')
     category = data.get('category', None)
     condition = data.get('condition', None)
+    filterStrength = data.get('filterStrength', 0)
 
     if not isinstance(query, str) or not query.strip():
         return jsonify({"error": "Bad request", "details": "Missing query"}), 400
 
-    item_list = get_items(query, minPrice, maxPrice, category, condition)
+    item_list = get_items(query, minPrice, maxPrice, category, condition, filterStrength)
     return jsonify({'itemSummaries': item_list})

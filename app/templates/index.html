@@ -229,15 +229,54 @@
                     </div>
 
                     <div class="filter-group">
-                        <label>Price Range</label>
-                        <div class="price-range-container">
-                            <input type="number" id="minPriceInput"
-                                onkeydown="if(/^[eE.\+\-]$/.test(event.key)) event.preventDefault();"
-                                placeholder="Min Price ($)" min="0" step="0.01">
-                            <span class="price-range-separator">-</span>
-                            <input type="number" id="maxPriceInput"
-                                onkeydown="if(/^[eE.\+\-]$/.test(event.key)) event.preventDefault();"
-                                placeholder="Max Price ($)" min="0" step="0.01">
+                        <label>Price Filter</label>
+                        <div class="price-filter-row">
+                            <!-- Left Column: Mode -->
+                            <div class="filter-col mode-col">
+                                <label class="sub-label">Mode</label>
+                                <div class="mode-toggle-container">
+                                    <input type="radio" id="modeAuto" name="priceMode" value="auto" checked>
+                                    <label for="modeAuto" class="mode-btn">Auto</label>
+
+                                    <input type="radio" id="modeSpecific" name="priceMode" value="specific">
+                                    <label for="modeSpecific" class="mode-btn">Specific</label>
+                                </div>
+                            </div>
+
+                            <!-- Right Column: Dynamic Content -->
+                            <div class="filter-col content-col">
+                                <div id="autoFilterOptions" class="dynamic-group">
+                                    <label class="sub-label">Strength</label>
+                                    <div class="strength-select-container">
+                                        <div class="strength-option">
+                                            <input type="radio" id="strengthLoose" name="filterStrength" value="6">
+                                            <label for="strengthLoose">Loose</label>
+                                        </div>
+                                        <div class="strength-option">
+                                            <input type="radio" id="strengthNormal" name="filterStrength" value="4"
+                                                checked>
+                                            <label for="strengthNormal">Normal</label>
+                                        </div>
+                                        <div class="strength-option">
+                                            <input type="radio" id="strengthStrict" name="filterStrength" value="3">
+                                            <label for="strengthStrict">Strict</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="specificPriceOptions" class="dynamic-group" style="display: none;">
+                                    <label class="sub-label">Range</label>
+                                    <div class="price-range-container">
+                                        <input type="number" id="minPriceInput"
+                                            onkeydown="if(/^[eE.\+\-]$/.test(event.key)) event.preventDefault();"
+                                            placeholder="Min ($)" min="0" step="0.01">
+                                        <span class="price-range-separator">-</span>
+                                        <input type="number" id="maxPriceInput"
+                                            onkeydown="if(/^[eE.\+\-]$/.test(event.key)) event.preventDefault();"
+                                            placeholder="Max ($)" min="0" step="0.01">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
