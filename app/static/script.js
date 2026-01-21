@@ -14,7 +14,6 @@ const CONSTANTS = {
 };
 
 const CATEGORIES = {
-    'Any': null,
     'Antiques': 20081,
     'Art': 550,
     'Baby': 2984,
@@ -118,7 +117,7 @@ function populateCategories() {
     if (!selector) return;
 
     // Default option
-    let html = '<option value="">Any</option>';
+    let html = '<option value="">Any (Recommended)</option>';
 
     // Convert object to array and sort alphabetically by name (excluding Auto)
     const entries = Object.entries(CATEGORIES)
@@ -154,16 +153,11 @@ function setupEventListeners() {
     }
 
     // New: Price Mode Toggle Logic
+    // New: Price Mode Toggle Logic
     if (DOM.inputs.priceModeRadios) {
         DOM.inputs.priceModeRadios.forEach(radio => {
             radio.addEventListener('change', (e) => {
-                if (e.target.value === 'auto') {
-                    DOM.inputs.autoOptions.style.display = 'flex';
-                    DOM.inputs.specificOptions.style.display = 'none';
-                } else {
-                    DOM.inputs.autoOptions.style.display = 'none';
-                    DOM.inputs.specificOptions.style.display = 'flex';
-                }
+                updateFilterUI(e.target.value);
             });
         });
     }
@@ -245,7 +239,17 @@ async function handleSearch() {
 
         renderDashboard();
         renderResultsTable();
-        saveToHistory(query, minPrice, maxPrice);
+        saveToHistory({
+            query,
+            minPrice,
+            maxPrice,
+            priceMode: selectedMode,
+            filterStrength,
+            category: DOM.inputs.category ? DOM.inputs.category.options[DOM.inputs.category.selectedIndex].text : 'Any',
+            categoryId: category,
+            condition: DOM.inputs.condition ? DOM.inputs.condition.options[DOM.inputs.condition.selectedIndex].text : 'Any',
+            conditionId: condition
+        });
 
     } catch (error) {
         showError(`Search failed. ${error.message}`);
@@ -469,6 +473,16 @@ function getThemeColors(isLight) {
     };
 }
 
+function updateFilterUI(mode) {
+    if (mode === 'auto') {
+        DOM.inputs.autoOptions.style.display = 'flex';
+        DOM.inputs.specificOptions.style.display = 'none';
+    } else {
+        DOM.inputs.autoOptions.style.display = 'none';
+        DOM.inputs.specificOptions.style.display = 'flex';
+    }
+}
+
 /**
  * Helper Functions
  */
@@ -535,9 +549,9 @@ function getHistory() {
     return JSON.parse(localStorage.getItem(CONSTANTS.HISTORY_KEY) || '[]');
 }
 
-function saveToHistory(query, minPrice, maxPrice) {
-    const history = getHistory().filter(h => h.query.toLowerCase() !== query.toLowerCase());
-    history.unshift({ query, minPrice, maxPrice, timestamp: new Date().toISOString() });
+function saveToHistory(params) {
+    const history = getHistory().filter(h => h.query.toLowerCase() !== params.query.toLowerCase());
+    history.unshift({ ...params, timestamp: new Date().toISOString() });
     localStorage.setItem(CONSTANTS.HISTORY_KEY, JSON.stringify(history.slice(0, CONSTANTS.MAX_HISTORY)));
 }
 
@@ -548,15 +562,52 @@ function showHistoryModal() {
     history.forEach(item => {
         const div = document.createElement('div');
         div.className = 'history-item';
+
+        let details = [];
+        if (item.category && item.category !== 'Any') details.push(item.category);
+        if (item.condition && item.condition !== 'Any') details.push(item.condition);
+
+        // Format Price Mode details
+        let priceInfo = '';
+        if (item.priceMode === 'auto') {
+            const strengths = { 2: 'Loose', 4: 'Normal', 6: 'Strict' };
+            priceInfo = `Auto (${strengths[item.filterStrength] || 'Normal'})`;
+        } else {
+            priceInfo = `Specific ($${item.minPrice || '0'} - $${item.maxPrice || '∞'})`;
+        }
+        details.push(priceInfo);
+
         div.innerHTML = `
             <div class="history-item-text">${item.query}</div>
-            <div class="history-item-range">Min ${item.minPrice || 'Any'} · Max ${item.maxPrice || 'Any'}</div>
+            <div class="history-item-range">${details.join(' · ')}</div>
             <div class="history-item-date">${new Date(item.timestamp).toLocaleString()}</div>
         `;
         div.onclick = () => {
+            // Restore Query
             DOM.inputs.search.value = item.query;
-            DOM.inputs.minPrice.value = item.minPrice;
-            DOM.inputs.maxPrice.value = item.maxPrice;
+
+            // Restore Category
+            if (DOM.inputs.category && item.categoryId) DOM.inputs.category.value = item.categoryId;
+
+            // Restore Condition
+            if (DOM.inputs.condition && item.conditionId) DOM.inputs.condition.value = item.conditionId;
+
+            // Restore Price Mode
+            const mode = item.priceMode || 'auto';
+            if (DOM.inputs.priceModeRadios) {
+                Array.from(DOM.inputs.priceModeRadios).forEach(r => r.checked = (r.value === mode));
+                updateFilterUI(mode);
+            }
+
+            // Restore Strength
+            if (item.filterStrength && DOM.inputs.filterStrengthRadios) {
+                Array.from(DOM.inputs.filterStrengthRadios).forEach(r => r.checked = (parseInt(r.value) === parseInt(item.filterStrength)));
+            }
+
+            // Restore Specific Prices
+            DOM.inputs.minPrice.value = item.minPrice || '';
+            DOM.inputs.maxPrice.value = item.maxPrice || '';
+
             toggleModal(DOM.modals.history, false);
             handleSearch();
         };
