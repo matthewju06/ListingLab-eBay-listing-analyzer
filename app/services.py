@@ -1,32 +1,7 @@
 import math, statistics
 from .clients import search_item #services -> clients
+from concurrent.futures import ThreadPoolExecutor
 
-# def IQR_filter(items):
-#     # First we will sort items since best match comes unsorted
-#     sort_items(items)
-    
-#     # Safer extraction that checks for price existence
-#     prices = get_prices(items)
-
-#     # Calculate quartiles
-#     q1 = statistics.quantiles(prices, n=4)[0]
-#     q3 = statistics.quantiles(prices, n=4)[2]
-#     iqr = q3 - q1
-    
-#     upper_bound = q3 + (1 * iqr)
-#     lower_bound = q1 - (0.7 * iqr)
-
-#     # Return filtered items based on price and if seller score is realistic (above 75%)
-#     def is_valid(item):
-#         try:
-#             price = float(item.get('price', {}).get('value', 0))
-#             score = float(item.get('seller', {}).get('feedbackPercentage', 0))
-#             return lower_bound <= price <= upper_bound and score > 95
-#         except:
-#             return False
-
-
-#     return [item for item in items if is_valid(item)]
 
 def filter_items(items):
     if not items:
@@ -104,19 +79,53 @@ def calculate_range(prices, segment):
     return price_range
 
 
+
+# CreateHeader()
+def create_params(query, minPrice, maxPrice, category, condition = None, page = 1, limit = 200, sort = False):
+    # Base filter
+    filter_str = f'price:[{minPrice}..{maxPrice}],priceCurrency:USD'
+
+    # Add condition filter
+    if condition:
+        if condition == 'new':
+            filter_str += ',conditionIds:{1000|1500}' # New, New other
+        elif condition == 'used':
+            filter_str += ',conditionIds:{3000|4000|5000|6000}' # Used, Very Good, Good, Acceptable
+
+    params = {
+        "q": str(query),
+        "auto_correct": "KEYWORD",
+        "filter" : filter_str,
+        "limit": str(limit),
+        "offset": f'{200*(page-1)}' #for pagination
+    }
+
+    if category:
+        params['category_ids'] = category
+
+    if sort:
+        params['sort'] = 'price'
+    
+    return params
+
 # Called by Flask app
 def get_items(query, minPrice, maxPrice, category, condition, filterStrength):
 #   search_item(query, minPrice, maxPrice, category, condition = None, page = 1, limit = 200)
     if minPrice == '':
         minPrice = '0'
 
+    sort = False
+
     if minPrice == '0' and maxPrice == '':
-        sample = filter_items(search_item(query, minPrice, maxPrice, category, condition, limit = 50))
+        sort = True
+        sampleParams = create_params(query, minPrice, maxPrice, category, condition, limit = 50)
+        sample = filter_items(search_item(sampleParams))
         prices = get_prices(sample)
         if prices:
             segment = get_segment(prices, filterStrength)
             if (segment[1] - segment[0]) / len(prices) < 0.6:
-                sample = filter_items(search_item(query, minPrice, maxPrice, category, condition, limit=100))
+                sampleParams = create_params(query, minPrice, maxPrice, category, condition, limit = 100)
+                sample = filter_items(search_item(sampleParams))
                 prices = get_prices(sample)
                 segment = get_segment(prices, filterStrength)
 
@@ -124,14 +133,24 @@ def get_items(query, minPrice, maxPrice, category, condition, filterStrength):
 
     # Pagination
     final_items = []
-    page = 1
-    while page <= 3:
-        page_items = search_item(query, minPrice, maxPrice, category, condition, page)
-        if not page_items:
-            break
-        final_items.extend(page_items)
-        if len(page_items) < 200:
-            break
-        page += 1
+    pages_to_fetch = [1,2,3]
+
+    import time
+
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        results_generator = executor.map(
+            lambda p: search_item(
+                create_params(query, minPrice, maxPrice, category, condition, page=p, sort=sort)
+            ), 
+            pages_to_fetch
+        )
+
+        # 2. Convert generator to list immediately to catch the data
+        pages_results = list(results_generator)
+        
+
+    for page_items in pages_results:
+        if page_items and isinstance(page_items, list):
+            final_items.extend(page_items)
 
     return filter_items(final_items)

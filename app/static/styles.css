@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@100..900&display=swap');
 /* @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap'); */
-@import url('https://fonts.googleapis.com/css2?family=Work+Sans:ital,wght@300;400;500;600;700&display=swap');
+/* @import url('https://fonts.googleapis.com/css2?family=Work+Sans:ital,wght@300;400;500;600;700&display=swap'); */
 
 * {
     margin: 0;
@@ -28,7 +28,7 @@
 }
 
 body {
-    font-family: "Work Sans", sans-serif;
+    font-family: 'Geist Mono', 'Courier New', monospace;
     background: var(--bg-primary);
     min-height: 100vh;
     color: var(--text-primary);
@@ -61,7 +61,7 @@ body {
 .home-title {
     font-size: 4em;
     font-weight: 700;
-    font-family: 'Geist Mono', 'Courier New', monospace;
+    /* font-family: 'Geist Mono', 'Courier New', monospace; */
     color: var(--accent-blue);
     margin: 0;
 }
@@ -99,7 +99,7 @@ body {
 .logo {
     font-size: 1.8em;
     font-weight: 700;
-    font-family: 'Geist Mono', 'Courier New', monospace;
+    /* font-family: 'Geist Mono', 'Courier New', monospace; */
     color: var(--accent-blue);
     margin: 0;
     white-space: nowrap;
@@ -368,6 +368,7 @@ input[type=number]::-webkit-outer-spin-button {
 #conditionSelect {
     width: 100%;
     font-size: 15px;
+    font-family: inherit;
     background: transparent;
     color: var(--text-primary);
     border: none;
@@ -514,6 +515,7 @@ input[type=number]::-webkit-outer-spin-button {
     background: #0064D2;
     color: white;
     font-weight: 600;
+    font-family: inherit;
     border: none;
     border-radius: 12px;
     cursor: pointer;
