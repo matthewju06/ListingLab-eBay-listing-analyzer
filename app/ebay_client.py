@@ -19,33 +19,31 @@ SEARCH_URL = "https://api.ebay.com/buy/browse/v1/item_summary/search"
 token_time = None
 token = None
 
-def get_access_token(): # -> str
-    global token_time, token
+def get_ebay_token(): # -> str
     auth = (CLIENT_ID, CLIENT_SECRET)
 
+    body = {
+        "grant_type": "client_credentials",
+        "scope": "https://api.ebay.com/oauth/api_scope"
+    }
+
+    resp = requests.post(TOKEN_URL, data=body, auth=auth)
+    resp.raise_for_status()
+
+    token_info = resp.json()
+    return token_info["access_token"]
+
+
+def fetch_listings(params): #str -> list(dict)
+    global token_time, token
+    
     # If past token does not exist yet or token age is over 100 minutes
     if not token_time or time.perf_counter() - token_time > 6000:
         token_time = time.perf_counter()
-        token = get_access_token()
+        token = get_ebay_token()
 
-        body = {
-            "grant_type": "client_credentials",
-            "scope": "https://api.ebay.com/oauth/api_scope"
-        }
-
-        resp = requests.post(TOKEN_URL, data=body, auth=auth)
-
-        resp.raise_for_status()  # will throw if something went wrong
-
-        token_info = resp.json()
-        token = token_info["access_token"]
-    
-    return token
-
-
-def search_item(params): #str -> list(dict)
     oauth = {
-        "Authorization": f"Bearer {get_access_token()}",
+        "Authorization": f"Bearer {token}",
         "X-EBAY-C-MARKETPLACE-ID": "EBAY_US",
     }
 

@@ -279,10 +279,10 @@ async function searchAPI(query, minPrice, maxPrice, category, condition, filterS
 function renderResultsTable() {
     const rows = state.items.map((item, index) => {
         const price = formatPrice(item.price);
-        const image = item.thumbnailImages?.[0]?.imageUrl || 'https://img.icons8.com/office40/512/cancel-2.png';
-        const seller = item.seller ? `${item.seller.username} (${item.seller.feedbackPercentage}%)` : 'N/A';
-        const link = item.itemWebUrl || item['item link'];
-        const category = item.categories?.[0]?.categoryName || 'N/A';
+        const image = item.imageUrl || 'https://img.icons8.com/office40/512/cancel-2.png';
+        const seller = item.username ? `${item.username} (${item.feedbackPercentage}%)` : 'N/A';
+        const link = item.itemWebUrl;
+        const category = item.categoryName || 'N/A';
 
         return `
             <tr>
@@ -349,7 +349,7 @@ function updateCharts() {
     // 2. Price vs Seller (Scatter)
     const sellerData = processScatterData(state.items, item => {
         const p = parseFloat(item.price?.value || item.price);
-        const score = parseFloat(item.seller?.feedbackPercentage);
+        const score = parseFloat(item.feedbackPercentage);
         return (isNaN(p) || isNaN(score)) ? null : { x: score, y: p };
     });
     renderScatterChart('priceVsSeller', DOM.charts.priceVsSeller, sellerData, 'Seller Score (%)', 'Price ($)', colors);
@@ -523,11 +523,11 @@ function handleDownloadCsv() {
     const rows = state.items.map((item, idx) => [
         idx + 1,
         item.title || 'N/A',
-        item.price?.value || item.price || 'N/A',
+        formatPrice(item.price), // Use formatPrice for consistency
         item.condition || 'N/A',
-        item.itemWebUrl || item['item link'] || 'N/A',
-        item.seller?.username ? `${item.seller.username} (${item.seller.feedbackPercentage}%)` : 'N/A',
-        item.categories?.[0]?.categoryName || 'N/A'
+        item.itemWebUrl || 'N/A',
+        item.username ? `${item.username} (${item.feedbackPercentage}%)` : 'N/A',
+        item.categoryName || 'N/A'
     ]);
 
     const csvContent = [headers, ...rows]
@@ -570,7 +570,7 @@ function showHistoryModal() {
         // Format Price Mode details
         let priceInfo = '';
         if (item.priceMode === 'auto') {
-            const strengths = { 2: 'Loose', 4: 'Normal', 6: 'Strict' };
+            const strengths = { 6: 'Loose', 4: 'Normal', 3: 'Strict' };
             priceInfo = `Auto (${strengths[item.filterStrength] || 'Normal'})`;
         } else {
             priceInfo = `Specific ($${item.minPrice || '0'} - $${item.maxPrice || '∞'})`;

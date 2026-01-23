@@ -1,15 +1,33 @@
 import math, statistics
-from .clients import search_item #services -> clients
+from .ebay_client import fetch_listings #services -> clients
 from concurrent.futures import ThreadPoolExecutor
 
+def format_listings(items):
+    new_items = []
+    for item in items:
+        new_item = dict()
+        new_item['title'] = item.get('title', None)
+        new_item['price'] = item.get('price', {}).get('value', '0')
+        new_item['condition'] = item.get('condition', None)
+        new_item['itemWebUrl'] = item.get('itemWebUrl', None)
+        new_item['username'] = item.get('seller', {}).get('username', None)
+        new_item['feedbackPercentage'] = item.get('seller', {}).get('feedbackPercentage', None)
+        new_item['categoryName'] = item.get('categories', [])[0].get('categoryName', None)
+        new_item['imageUrl'] = item.get('image', {}).get('imageUrl', None)
+        new_item['itemCreationDate'] = item.get('itemCreationDate', None)
 
-def filter_items(items):
+        new_items.append(new_item)
+    
+    return new_items
+
+
+def filter_by_quality(items):
     if not items:
         return items
     
     def is_valid(item):
         try:
-            score = float(item.get('seller', {}).get('feedbackPercentage', 0))
+            score = float(item['feedbackPercentage'])
             return score > 95
         except:
             return False
@@ -19,7 +37,7 @@ def filter_items(items):
     # Gives back a float version of the given item
     def get_price(item):
         try:
-            return float(item.get('price', {}).get('value', 0))
+            return float(item['price'])
         except (ValueError, TypeError):
             return 0.0
     
@@ -27,7 +45,7 @@ def filter_items(items):
     return items
 
 
-def get_prices(items):
+def extract_prices(items):
     if not items:
         return items
     
@@ -35,7 +53,7 @@ def get_prices(items):
     prices = []
     for i in items:
         try:
-            val = i.get('price', {}).get('value')
+            val = i['price']
             if val:
                 prices.append(float(val))
         except (ValueError, TypeError):
@@ -81,7 +99,7 @@ def calculate_range(prices, segment):
 
 
 # CreateHeader()
-def create_params(query, minPrice, maxPrice, category, condition = None, page = 1, limit = 200, sort = False):
+def build_search_params(query, minPrice, maxPrice, category, condition = None, page = 1, limit = 200, sort = False):
     # Base filter
     filter_str = f'price:[{minPrice}..{maxPrice}],priceCurrency:USD'
 
@@ -109,8 +127,8 @@ def create_params(query, minPrice, maxPrice, category, condition = None, page = 
     return params
 
 # Called by Flask app
-def get_items(query, minPrice, maxPrice, category, condition, filterStrength):
-#   search_item(query, minPrice, maxPrice, category, condition = None, page = 1, limit = 200)
+def process_search(query, minPrice, maxPrice, category, condition, filterStrength):
+#   fetch_listings(query, minPrice, maxPrice, category, condition = None, page = 1, limit = 200)
     if minPrice == '':
         minPrice = '0'
 
@@ -118,30 +136,30 @@ def get_items(query, minPrice, maxPrice, category, condition, filterStrength):
 
     if minPrice == '0' and maxPrice == '':
         sort = True
-        sampleParams = create_params(query, minPrice, maxPrice, category, condition, limit = 50)
-        sample = filter_items(search_item(sampleParams))
-        prices = get_prices(sample)
+        sampleParams = build_search_params(query, minPrice, maxPrice, category, condition, limit = 50)
+        sample = filter_by_quality(format_listings(fetch_listings(sampleParams)))
+        prices = extract_prices(sample)
         if prices:
             segment = get_segment(prices, filterStrength)
             if (segment[1] - segment[0]) / len(prices) < 0.6:
-                sampleParams = create_params(query, minPrice, maxPrice, category, condition, limit = 100)
-                sample = filter_items(search_item(sampleParams))
-                prices = get_prices(sample)
+                sampleParams = build_search_params(query, minPrice, maxPrice, category, condition, limit = 100)
+                sample = filter_by_quality(format_listings(fetch_listings(sampleParams)))
+                prices = extract_prices(sample)
                 segment = get_segment(prices, filterStrength)
 
             minPrice, maxPrice = calculate_range(prices, segment)
 
     # Pagination
     final_items = []
-    pages_to_fetch = [1,2,3]
+    pages_to_fetch = [1,2]
 
     import time
 
     with ThreadPoolExecutor(max_workers=5) as executor:
         results_generator = executor.map(
-            lambda p: search_item(
-                create_params(query, minPrice, maxPrice, category, condition, page=p, sort=sort)
-            ), 
+            lambda p: format_listings(fetch_listings(
+                build_search_params(query, minPrice, maxPrice, category, condition, page=p, sort=sort)
+            )), 
             pages_to_fetch
         )
 
@@ -153,4 +171,4 @@ def get_items(query, minPrice, maxPrice, category, condition, filterStrength):
         if page_items and isinstance(page_items, list):
             final_items.extend(page_items)
 
-    return filter_items(final_items)
+    return filter_by_quality(final_items)

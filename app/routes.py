@@ -1,6 +1,6 @@
 import os
 from flask import Blueprint, request, jsonify, render_template
-from .services import get_items #routes -> services
+from .ebay_services import process_search #routes -> services
 
 bp = Blueprint('main', __name__)
 
@@ -27,5 +27,5 @@ def search():
     if not isinstance(query, str) or not query.strip():
         return jsonify({"error": "Bad request", "details": "Missing query"}), 400
 
-    item_list = get_items(query, minPrice, maxPrice, category, condition, filterStrength)
+    item_list = process_search(query, minPrice, maxPrice, category, condition, filterStrength)
     return jsonify({'itemSummaries': item_list})
