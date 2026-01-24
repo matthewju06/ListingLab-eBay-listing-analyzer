@@ -2,6 +2,142 @@ import math, statistics
 from .ebay_client import fetch_listings #services -> clients
 from concurrent.futures import ThreadPoolExecutor
 
+
+# We are going to do this
+
+# 1. Initial KW filtering
+# 2. IQR to remove low and high price
+# 3. Sliding window to find best price range
+
+# Abstracttion:
+# 1. Get listings (search ebay, reformat to simple, dont sort yet)
+    # a. this is not sorted yet because when searching up the final time we will sort again anyways
+# 2. IQR Filter (get items sorted, calc IQR, remove and return new list)
+# 3. Calcuate Range (take those items (sorted already) and use sliding window to calcuate the best segment (density))
+
+
+# Called by Flask app
+# Highest level of abstraction
+def process_search(query, minPrice, maxPrice, category, condition, filterStrength):
+    if minPrice == '':
+        minPrice = '0'
+
+    # If user did not put a maxPrice and (minPrice was not set too or is 0)
+    if minPrice == '0' and maxPrice == '':
+        sample = get_listings(query, minPrice, maxPrice, category, condition, limit = 100)
+        print(f"limit = 100, found {len(sample)} items")
+        sample = apply_IQR(sample)
+        print(f"applied IQR, now {len(sample)} items")
+        prices = extract_prices(sample)
+        minPrice, maxPrice = compute_price_range(prices, filterStrength)
+        print(f"price range is ({minPrice},{maxPrice})")
+
+    # Pagination
+    final_items = []
+    pages_to_fetch = [1,2]
+
+    import time
+    print(f"using price range ({minPrice},{maxPrice})")
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        results_generator = executor.map(
+            lambda p: (get_listings(query, minPrice, maxPrice, category, condition, page=p)), 
+            pages_to_fetch
+        )
+
+        # 2. Convert generator to list immediately to catch the data
+        pages_results = list(results_generator)
+        
+
+    for page_items in pages_results:
+        if page_items and isinstance(page_items, list):
+            final_items.extend(page_items)
+
+    return filter_by_quality(final_items)
+
+
+def apply_IQR(items):
+    prices = extract_prices(items)
+    if not prices:
+        return items
+
+    print(f"pre IQR: {min(prices)}, {max(prices)}")
+
+    if len(prices) < 15:
+        return items  # not enough signal
+
+    prices = sorted(prices)
+
+    q1, _, q3 = statistics.quantiles(prices, n=4, method="inclusive")
+    iqr = q3 - q1
+
+    lower = q1 - 1.0 * iqr
+    upper = q3 + 1.5 * iqr
+
+    def is_valid(item):
+        try:
+            price = float(item["price"])
+            return lower <= price <= upper
+        except (ValueError, TypeError):
+            return False
+
+    return [item for item in items if is_valid(item)]
+
+# Builds params and searches ebay then formats, sorts, and filters the listings
+def get_listings(query, minPrice, maxPrice, category, condition = None, page = 1, limit = 200):
+    params = build_search_params(query, minPrice, maxPrice, category, condition, page, limit)
+    raw_items = fetch_listings(params)
+    items = format_listings(raw_items)
+    return items
+
+
+# Currently used as last step before sending all data to user
+# Removes items with negative keywords and low seller score, then sorts
+def filter_by_quality(items):
+    if not items:
+        return items
+    
+    EXCLUDE_KEYWORDS = {
+        "broken",
+    }
+
+    def is_valid(item):
+        try:
+            score = float(item['feedbackPercentage'])
+            contains_nkw = False
+
+            for word in item['title'].split():
+                if word.lower() in EXCLUDE_KEYWORDS:
+                    contains_nkw = True
+                    break
+
+            return score > 95 and not contains_nkw
+        except:
+            return False
+
+    items = [item for item in items if is_valid(item)]
+
+    # Gives back a float version of the given item
+    def get_price(item):
+        try:
+            return float(item['price'])
+        except (ValueError, TypeError):
+            return 0.0
+    
+    items = sorted(items, key = get_price)
+    return items
+
+
+# def calculate_range(sample, filterStrength):
+#     prices = extract_prices(sample)
+#     segment = get_segment(prices, filterStrength)
+
+#     if not prices or segment[1] >= len(prices):
+#         return (0.0, 0.0)
+
+#     price_range = (prices[segment[0]], prices[segment[1]])
+#     return price_range
+
+
 def format_listings(items):
     new_items = []
     for item in items:
@@ -21,85 +157,56 @@ def format_listings(items):
     return new_items
 
 
-def filter_by_quality(items):
-    if not items:
-        return items
-    
-    def is_valid(item):
-        try:
-            score = float(item['feedbackPercentage'])
-            return score > 95
-        except:
-            return False
-
-    items = [item for item in items if is_valid(item)]
-
-    # Gives back a float version of the given item
-    def get_price(item):
-        try:
-            return float(item['price'])
-        except (ValueError, TypeError):
-            return 0.0
-    
-    items = sorted(items, key = get_price)
-    return items
-
-
 def extract_prices(items):
     if not items:
         return items
     
     # Safer extraction that checks for price existence
     prices = []
-    for i in items:
+    for item in items:
         try:
-            val = i['price']
+            val = item['price']
             if val:
-                prices.append(float(val))
+                p = float(val)
+                if p > 0: prices.append(p)
         except (ValueError, TypeError):
             continue
     
     return prices
 
 
-# Adjusting Sliding Window Method
-def get_segment(prices, ALPHA):
-    # Log the prices to make larger gaps more unique
-    log_prices = [math.log(price) for price in prices]
-    gaps = [log_prices[i+1] - log_prices[i] for i in range(len(log_prices) - 1)]
+# # Adjusting Sliding Window Method
+# def get_segment(prices, ALPHA):
+#     prices = sorted(p for p in prices if p > 0)
+#     n = len(prices)
+#     if n < 5:
+#         return (0, n - 1)
 
-    # Finds an appropriate gap threshold
-    gap_scale = statistics.median(gaps)
-    gap_threshold = gap_scale * ALPHA
+#     log_prices = [math.log(p) for p in prices]
+#     gaps = [log_prices[i+1] - log_prices[i] for i in range(n - 1)]
 
-    # Record idx in gaps that are greater than gap threshold
-    breaks = [idx for idx, g in enumerate(gaps) if g > gap_threshold]
-    edges = [0] + breaks + [len(prices)-1]
-    
-    # Find the largest segment
-    largest_segment = (0, 0)
-    max_size = -1
-    for i in range(len(edges)-1):
-        start = edges[i]+1
-        end = edges[i+1]
-        if (end - start) > max_size:
-            largest_segment = (start, end)
-            max_size = end - start
+#     gap_scale = statistics.median(gaps)  # gaps non-empty because n>=5
+#     gap_threshold = gap_scale * ALPHA
 
-    return largest_segment
+#     breaks = [i + 1 for i, g in enumerate(gaps) if g > gap_threshold]
+#     edges = [0] + breaks + [n]  # slice boundaries
 
+#     best = (0, n - 1)
+#     best_size = 0
 
-def calculate_range(prices, segment):
-    if not prices or segment[1] >= len(prices):
-        return (0.0, 0.0)
+#     for i in range(len(edges) - 1):
+#         start = edges[i]
+#         end = edges[i + 1] - 1  # inclusive
+#         size = end - start + 1
+#         if size > best_size:
+#             best = (start, end)
+#             best_size = size
 
-    price_range = (prices[segment[0]], prices[segment[1]])
-    return price_range
-
+#     return best
 
 
 # CreateHeader()
-def build_search_params(query, minPrice, maxPrice, category, condition = None, page = 1, limit = 200, sort = False):
+def build_search_params(query, minPrice, maxPrice, category, condition, page, limit):
     # Base filter
     filter_str = f'price:[{minPrice}..{maxPrice}],priceCurrency:USD'
 
@@ -108,7 +215,7 @@ def build_search_params(query, minPrice, maxPrice, category, condition = None, p
         if condition == 'new':
             filter_str += ',conditionIds:{1000|1500}' # New, New other
         elif condition == 'used':
-            filter_str += ',conditionIds:{3000|4000|5000|6000}' # Used, Very Good, Good, Acceptable
+            filter_str += ',conditionIds:{2750|2990|3000|4000|5000|6000}' # Used, Very Good, Good, Acceptable
 
     params = {
         "q": str(query),
@@ -121,54 +228,81 @@ def build_search_params(query, minPrice, maxPrice, category, condition = None, p
     if category:
         params['category_ids'] = category
 
-    if sort:
-        params['sort'] = 'price'
-    
     return params
 
-# Called by Flask app
-def process_search(query, minPrice, maxPrice, category, condition, filterStrength):
-#   fetch_listings(query, minPrice, maxPrice, category, condition = None, page = 1, limit = 200)
-    if minPrice == '':
-        minPrice = '0'
+def find_segments(prices, ALPHA):
+    prices = sorted(p for p in prices if p > 0)
+    n = len(prices)
+    if n < 5:
+        return [(0, n-1)]
 
-    sort = False
+    log_prices = [math.log(p) for p in prices]
+    gaps = [log_prices[i+1] - log_prices[i] for i in range(n-1)]
+    if not gaps:
+        return [(0, n-1)]
 
-    if minPrice == '0' and maxPrice == '':
-        sort = True
-        sampleParams = build_search_params(query, minPrice, maxPrice, category, condition, limit = 50)
-        sample = filter_by_quality(format_listings(fetch_listings(sampleParams)))
-        prices = extract_prices(sample)
-        if prices:
-            segment = get_segment(prices, filterStrength)
-            if (segment[1] - segment[0]) / len(prices) < 0.6:
-                sampleParams = build_search_params(query, minPrice, maxPrice, category, condition, limit = 100)
-                sample = filter_by_quality(format_listings(fetch_listings(sampleParams)))
-                prices = extract_prices(sample)
-                segment = get_segment(prices, filterStrength)
+    gap_scale = statistics.median(gaps)
+    gap_threshold = gap_scale * ALPHA
 
-            minPrice, maxPrice = calculate_range(prices, segment)
+    # gap index -> price boundary (i+1)
+    breaks = [i + 1 for i, g in enumerate(gaps) if g > gap_threshold]
+    edges = [0] + breaks + [n]
 
-    # Pagination
-    final_items = []
-    pages_to_fetch = [1,2]
+    segments = []
+    for i in range(len(edges)-1):
+        s = edges[i]
+        e = edges[i+1] - 1
+        if e >= s:
+            segments.append((s, e))
+    return segments
 
-    import time
+def pick_best_segment(prices, segments):
+    n = len(prices)
+    global_med = statistics.median(prices)
 
-    with ThreadPoolExecutor(max_workers=5) as executor:
-        results_generator = executor.map(
-            lambda p: format_listings(fetch_listings(
-                build_search_params(query, minPrice, maxPrice, category, condition, page=p, sort=sort)
-            )), 
-            pages_to_fetch
+    best = (0, n-1)
+    best_score = float("-inf")
+
+    for s, e in segments:
+        size = e - s + 1
+        if size < 5:
+            continue
+
+        width = prices[e] - prices[s]
+        seg_med = statistics.median(prices[s:e+1])
+
+        # score: prefer size, avoid razor-thin, avoid far-from-median
+        score = (
+            math.log(size + 1)
+            - 0.6 * math.log(width + 2)
+            - 0.01 * abs(seg_med - global_med)
         )
 
-        # 2. Convert generator to list immediately to catch the data
-        pages_results = list(results_generator)
-        
+        if score > best_score:
+            best_score = score
+            best = (s, e)
 
-    for page_items in pages_results:
-        if page_items and isinstance(page_items, list):
-            final_items.extend(page_items)
+    return best
 
-    return filter_by_quality(final_items)
+
+def compute_price_range(prices, ALPHA):
+    prices = sorted(p for p in prices if p > 0)
+    n = len(prices)
+    if n < 5:
+        return (0.0, 0.0)
+
+    segments = find_segments(prices, ALPHA)
+    s, e = pick_best_segment(prices, segments)
+
+    # Coverage gate: if segment too small, fallback to quantiles
+    coverage = (e - s + 1) / n
+    if coverage < 0.65:
+        lo = prices[int(0.2 * (n-1))]
+        hi = prices[int(0.8 * (n-1))]
+    else:
+        lo, hi = prices[s], prices[e]
+
+    # Pad the range so it’s not tiny
+    width = hi - lo
+    pad = max(3.0, 0.1 * width)   # $3 or 10%
+    return max(0.0, lo - pad), hi + pad

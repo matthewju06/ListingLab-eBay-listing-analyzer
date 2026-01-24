@@ -339,12 +339,15 @@ let charts = {}; // Store chart instances
 function updateCharts() {
     const colors = { text: '#bcbcbc', grid: '#333333' }; // Dark mode constants
 
-    // 1. Listings by Price (Scatter)
-    const priceData = processScatterData(state.items, item => {
-        const p = parseFloat(item.price?.value || item.price);
-        return isNaN(p) ? null : { x: p, y: 0 };
-    });
-    renderScatterChart('listingsByPrice', DOM.charts.listingsByPrice, priceData, 'Price ($)', '', colors);
+    // 1. Listings by Price (Histogram)
+    const prices = state.items
+        .map(i => parseFloat(i.price?.value || i.price))
+        .filter(p => !isNaN(p));
+
+    if (prices.length > 0) {
+        const histogramData = createHistogramData(prices);
+        renderHistogramChart('listingsByPrice', DOM.charts.listingsByPrice, histogramData, 'Price ($)', 'Count', colors);
+    }
 
     // 2. Price vs Seller (Scatter)
     const sellerData = processScatterData(state.items, item => {
@@ -387,7 +390,7 @@ function renderScatterChart(id, canvas, data, xLabel, yLabel, colors, isTime = f
 
     const datasets = [
         { label: 'New', data: data.New, backgroundColor: 'rgba(39, 145, 0, 0.5)', borderColor: '#279100' },
-        { label: 'Used', data: data.Used, backgroundColor: 'rgba(0, 100, 210, 0.5)', borderColor: '#0064D2' },
+        { label: 'Used', data: data.Used, backgroundColor: 'rgba(255, 140, 0, 0.5)', borderColor: '#FF8C00' },
         { label: 'Other', data: data.Other, backgroundColor: 'rgba(153, 153, 153, 0.5)', borderColor: '#999' }
     ].map(d => ({ ...d, pointRadius: 5, pointBorderWidth: 1 }));
 
@@ -432,6 +435,97 @@ function renderScatterChart(id, canvas, data, xLabel, yLabel, colors, isTime = f
     charts[id] = new Chart(canvas, config);
 }
 
+function createHistogramData(prices) {
+    if (prices.length === 0) return { labels: [], data: [] };
+
+    const min = Math.floor(Math.min(...prices));
+    const max = Math.ceil(Math.max(...prices));
+
+    // Freedman-Diaconis Rule
+    const sorted = [...prices].sort((a, b) => a - b);
+    const q1 = sorted[Math.floor(sorted.length * 0.25)];
+    const q3 = sorted[Math.floor(sorted.length * 0.75)];
+    const iqr = q3 - q1;
+    const n = prices.length;
+
+    let binCount = 20; // fallback
+    if (iqr > 0) {
+        const binWidth = 2 * iqr * Math.pow(n, -1 / 3);
+        const calcRange = max - min;
+        binCount = Math.ceil(calcRange / binWidth);
+    }
+
+    // Clamp constraints: min 5, max 15
+    binCount = Math.max(5, Math.min(15, binCount));
+
+    const range = max - min || 1;
+    const step = range / binCount;
+
+    const bins = new Array(binCount).fill(0);
+    const labels = new Array(binCount).fill(0).map((_, i) => {
+        const start = min + (i * step);
+        const end = start + step;
+        return `$${start.toFixed(0)} - $${end.toFixed(0)}`;
+    });
+
+    prices.forEach(p => {
+        let bucket = Math.floor((p - min) / step);
+        if (bucket >= binCount) bucket = binCount - 1; // Catch edge case
+        bins[bucket]++;
+    });
+
+    return { labels, data: bins };
+}
+
+function renderHistogramChart(id, canvas, data, xLabel, yLabel, colors) {
+    if (!canvas) return;
+    if (charts[id]) charts[id].destroy();
+
+    const config = {
+        type: 'bar',
+        data: {
+            labels: data.labels,
+            datasets: [{
+                label: 'Listings Count',
+                data: data.data,
+                backgroundColor: 'rgba(0, 100, 210, 0.6)',
+                borderColor: '#0064D2',
+                borderWidth: 1,
+                barPercentage: 0.9,
+                categoryPercentage: 1.0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    title: { display: true, text: xLabel, color: colors.text },
+                    ticks: { color: colors.text },
+                    grid: { display: false }
+                },
+                y: {
+                    title: { display: true, text: yLabel, color: colors.text },
+                    ticks: { color: colors.text },
+                    grid: { color: colors.grid }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                zoom: {
+                    zoom: {
+                        wheel: { enabled: true },
+                        pinch: { enabled: true },
+                        mode: 'x'
+                    },
+                    pan: { enabled: true, mode: 'x' }
+                }
+            }
+        }
+    };
+    charts[id] = new Chart(canvas, config);
+}
+
 function renderDonutChart(colors) {
     const canvas = DOM.charts.newVsUsed;
     if (!canvas) return;
@@ -451,8 +545,8 @@ function renderDonutChart(colors) {
             labels: ['New', 'Used', 'Other'],
             datasets: [{
                 data: [counts.New, counts.Used, counts.Other],
-                backgroundColor: ['#279100', '#0064D2', '#999999'],
-                borderColor: ['#279100', '#0064D2', '#999999'],
+                backgroundColor: ['#279100', '#FF8C00', '#999999'],
+                borderColor: ['#279100', '#FF8C00', '#999999'],
                 borderWidth: 2
             }]
         },
