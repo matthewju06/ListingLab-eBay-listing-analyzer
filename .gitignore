@@ -23,3 +23,5 @@ frontend/.angular/
 node_modules/
 dist/
 .parcel-cache/
+.vercel
+.env*

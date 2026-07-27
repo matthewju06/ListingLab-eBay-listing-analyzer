@@ -29,6 +29,12 @@ class EbayClient:
             auth=(settings.client_id, settings.client_secret),
             timeout=30,
         )
+        if resp.status_code == 401:
+            raise RuntimeError(
+                "eBay OAuth rejected CLIENT_ID / CLIENT_SECRET (401). "
+                "Use the Production App ID and Cert ID from developer.ebay.com "
+                "(not Sandbox), set them on Vercel for Production, and redeploy."
+            )
         resp.raise_for_status()
         return resp.json()["access_token"]
 

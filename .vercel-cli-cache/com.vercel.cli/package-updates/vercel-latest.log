@@ -1,0 +1,16 @@
+[2026-07-27T19:37:24.929Z] [debug] Notifying parent we're ready
+[2026-07-27T19:37:25.015Z] [debug] Received message from parent: {
+  cacheFile: '/Users/matthewju/Repos/ebay-sales-finder/.vercel-cli-cache/com.vercel.cli/package-updates/vercel-latest.json',
+  distTag: 'latest',
+  name: 'vercel',
+  updateCheckInterval: 86400000
+}
+[2026-07-27T19:37:25.015Z] [debug] Disconnecting from parent
+[2026-07-27T19:37:25.015Z] [debug] Checking lock file: /Users/matthewju/Repos/ebay-sales-finder/.vercel-cli-cache/com.vercel.cli/package-updates/vercel-latest.lock
+[2026-07-27T19:37:25.015Z] [debug] Initializing lock file with pid 9890
+[2026-07-27T19:37:25.016Z] [debug] Fetching dist-tags for vercel
+[2026-07-27T19:37:25.026Z] [error] Failed to get package info: Error: Failed to fetch dist-tags from npm
+    at process.<anonymous> (/Users/matthewju/.nvm/versions/node/v24.18.0/lib/node_modules/vercel/dist/get-latest-worker.cjs:124:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+[2026-07-27T19:37:25.027Z] [debug] Releasing lock file: /Users/matthewju/Repos/ebay-sales-finder/.vercel-cli-cache/com.vercel.cli/package-updates/vercel-latest.lock
+[2026-07-27T19:37:25.027Z] [debug] Worker finished successfully!
