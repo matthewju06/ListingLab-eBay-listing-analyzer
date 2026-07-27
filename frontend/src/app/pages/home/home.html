@@ -1,0 +1,16 @@
+<section class="home-hero">
+  <h1 class="home-brand">ListingLab</h1>
+  <p class="home-tagline">Search eBay listings, spot price ranges, and analyze the market.</p>
+
+  <form class="home-search" (submit)="$event.preventDefault(); submitSearch()">
+    <input
+      type="text"
+      [(ngModel)]="query"
+      name="homeQuery"
+      placeholder="Enter product name..."
+      autocomplete="off"
+      maxlength="80"
+    />
+    <button type="submit" class="unselectable-text">Search</button>
+  </form>
+</section>

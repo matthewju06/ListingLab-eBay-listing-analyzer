@@ -2,14 +2,25 @@
   "version": 2,
   "builds": [
     {
-      "src": "run.py",
+      "src": "backend/app/main.py",
       "use": "@vercel/python"
+    },
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist/frontend/browser"
+      }
     }
   ],
   "routes": [
     {
+      "src": "/api/(.*)",
+      "dest": "backend/app/main.py"
+    },
+    {
       "src": "/(.*)",
-      "dest": "run.py"
+      "dest": "frontend/dist/frontend/browser/$1"
     }
   ]
 }

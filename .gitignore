@@ -1,20 +1,25 @@
 # secrets
 .env
+backend/.env
 
 # python
+backend/.venv/
 .venv/
 venv/
 __pycache__/
 *.pyc
 
-# os
+# node / angular
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+
+# os / ide
 .DS_Store
-
 .idea/
+.vscode/
 
+# legacy artifacts
 node_modules/
 dist/
 .parcel-cache/
-
-__pycache__/
-*.pyc

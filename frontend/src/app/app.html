@@ -1,0 +1,121 @@
+<div class="app-shell">
+  <nav class="app-nav">
+    <a routerLink="/" class="app-nav-brand">ListingLab</a>
+
+    <form class="shell-search" (submit)="onSearchSubmit($event)">
+      <div class="shell-search-control">
+        <select
+          class="shell-select shell-category"
+          aria-label="Category"
+          name="shellCategory"
+          [(ngModel)]="shellSearch.category"
+        >
+          <option value="">Any category</option>
+          @for (cat of categoryOptions; track cat.id) {
+            <option [value]="cat.id">{{ cat.name }}</option>
+          }
+        </select>
+
+        <span class="shell-search-divider" aria-hidden="true"></span>
+
+        <select
+          class="shell-select shell-condition"
+          aria-label="Condition"
+          name="shellCondition"
+          [(ngModel)]="shellSearch.condition"
+        >
+          <option value="">Any condition</option>
+          <option value="new">New</option>
+          <option value="used">Used</option>
+        </select>
+
+        <span class="shell-search-divider" aria-hidden="true"></span>
+
+        <input
+          class="shell-query"
+          type="text"
+          name="shellQuery"
+          [(ngModel)]="shellSearch.query"
+          placeholder="Enter product name..."
+          autocomplete="off"
+          maxlength="80"
+        />
+
+        <button type="submit" class="shell-search-submit" aria-label="Search">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </button>
+      </div>
+
+      <button type="button" class="shell-history-btn" aria-label="Search history" (click)="openHistory()">
+        <svg class="history-icon" width="22" height="22" viewBox="0 0 24 24" fill="none"
+          xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M5.52786 16.7023C6.6602 18.2608 8.3169 19.3584 10.1936 19.7934C12.0703 20.2284 14.0409 19.9716 15.7434 19.0701C17.446 18.1687 18.766 16.6832 19.4611 14.8865C20.1562 13.0898 20.1796 11.1027 19.527 9.29011C18.8745 7.47756 17.5898 5.96135 15.909 5.02005C14.2282 4.07875 12.2641 3.77558 10.3777 4.16623C8.49129 4.55689 6.80919 5.61514 5.64045 7.14656C4.47171 8.67797 3.89482 10.5797 4.01579 12.5023M4.01579 12.5023L2.51579 11.0023M4.01579 12.5023L5.51579 11.0023"
+            stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path>
+          <path d="M12 8V12L15 15" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"
+            stroke-linejoin="round"></path>
+        </svg>
+      </button>
+    </form>
+
+    <div class="app-nav-links">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
+      <a routerLink="/saved" routerLinkActive="active">Saved</a>
+      <a routerLink="/tracking" routerLinkActive="active">Tracking</a>
+    </div>
+  </nav>
+
+  <main class="app-main">
+    <router-outlet />
+  </main>
+</div>
+
+@if (showHistory) {
+  <div class="modal" (click)="closeHistory()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Search History</h2>
+        <div class="modal-header-actions">
+          <button class="clear-history-btn" aria-label="Clear all history" (click)="clearHistory()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              <line x1="10" y1="11" x2="10" y2="17"></line>
+              <line x1="14" y1="11" x2="14" y2="17"></line>
+            </svg>
+          </button>
+          <button class="close-btn" aria-label="Close" (click)="closeHistory()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="history-list">
+          @if (!history.length) {
+            <p class="no-history">No search history yet.</p>
+          }
+          @for (entry of history; track entry.timestamp) {
+            <div class="history-item" (click)="restoreHistory(entry)">
+              <div class="history-item-text">{{ entry.query }}</div>
+              <div class="history-item-range">
+                @if (entry.categoryLabel !== 'Any') { {{ entry.categoryLabel }} · }
+                @if (entry.conditionLabel !== 'Any') { {{ entry.conditionLabel }} · }
+                {{ historyPriceInfo(entry) }}
+              </div>
+              <div class="history-item-date">{{ entry.timestamp | date: 'medium' }}</div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+}

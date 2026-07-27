@@ -1,136 +1,129 @@
-# ListingLab
+# ListingLab eBay Listing Analyzer
 
-A lightweight eBay listing explorer: search, filter by price range, visualize distributions, and export results.
-
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-listing--lab.vercel.app-000?style=flat&logo=vercel&logoColor=white)](https://listing-lab.vercel.app/)
-![Status](https://img.shields.io/badge/status-active-success?style=flat)
-![Stack](https://img.shields.io/badge/stack-HTML%2FCSS%2FJS%20%2B%20Flask-blue?style=flat)
-
----
-
-## AI assistance
-
-Some UI/CSS and documentation text were drafted with AI assistance and then edited/tested by me.
-
-All project decisions, backend feature implementations, and final UI behaviors were created by me.
-
----
-
-## Features
-
-- Search eBay listings with optional **min/max price**
-- Instant **summary stats** (count, avg/median/min/max)
-- Interactive charts (price distribution, new vs used, seller score scatter, time series)
-- **Download CSV** for analysis
-- **Search history** + **Dark/Light mode** (saved locally)
-
----
-
-## Live Demo
-
-- https://listing-lab.vercel.app/
-
----
+Search, filter, and analyze eBay listings with statistical price-range detection, interactive charts, and CSV export.
 
 ## Tech Stack
 
-- **Frontend:** Vanilla HTML/CSS/JS + Chart.js (CDN)
-- **Backend:** Python + Flask API (`/api/search`)
-- **Deploy:** Vercel (static + API route)
+| Layer | Stack |
+|-------|-------|
+| Frontend | Angular 22, Apache ECharts, AG Grid, SCSS |
+| Backend | FastAPI, Pydantic, Uvicorn |
+| API | eBay Browse API (OAuth client credentials) |
 
----
+## Project Structure
+
+```
+├── backend/
+│   ├── app/
+│   │   ├── api/routes/       # HTTP route handlers
+│   │   ├── clients/          # External API clients (eBay)
+│   │   ├── models/           # Pydantic request/response schemas
+│   │   ├── services/         # Business logic (search, price analysis)
+│   │   ├── config.py         # Settings via pydantic-settings
+│   │   └── main.py           # FastAPI app entry point
+│   └── requirements.txt
+├── frontend/
+│   └── src/app/
+│       ├── core/             # Constants, models, utilities
+│       ├── pages/            # Home, search analyzer, saved, tracking
+│       └── services/         # Search, history, chart services
+└── docker-compose.yml
+```
+
+## App Routes
+
+| Path | Page |
+|------|------|
+| `/` | Home — brand + search entry |
+| `/search?q=...` | Analyzer workspace (charts + table); query params hold search state |
+| `/saved` | Saved searches (placeholder) |
+| `/tracking` | Price tracking (placeholder) |
 
 ## Run Locally
 
-> Note: ListingLab queries the eBay Browse API. Local runs require your own eBay API credentials via environment variables.
+### Prerequisites
 
-### 1) Prereqs
-- Python 3.10+ recommended
+- Python 3.10+
+- Node.js 20+
 - eBay API credentials (Client ID + Client Secret)
 
-### 2) Environment variables
+### Backend
 
-Create a `.env` (do **not** commit):
-
-~~~bash
-CLIENT_ID=your_ebay_client_id
-CLIENT_SECRET=your_ebay_client_secret
-~~~
-
-### 3) Install + run
-
-~~~bash
+```bash
+cd backend
 python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
 
-pip install flask requests python-dotenv
-python api.py
-~~~
+cp .env.example .env        # Add CLIENT_ID and CLIENT_SECRET
+uvicorn app.main:app --reload --port 8000
+```
 
-Open: http://localhost:8000
+### Frontend
 
----
+```bash
+cd frontend
+npm install
+npm start                   # http://localhost:4200 (proxies /api to :8000)
+```
+
+### Docker Compose
+
+```bash
+cp backend/.env.example backend/.env   # Add credentials
+docker compose up
+```
+
+Frontend: http://localhost:4200 · API: http://localhost:8000 · Docs: http://localhost:8000/docs
 
 ## API
 
-### `POST /api/search`
+### `GET /api/search`
 
-**Request**
-~~~json
-{
-  "query": "pokemon",
-  "minPrice": "0",
-  "maxPrice": "200"
-}
-~~~
+**Query parameters**
+
+| Param | Example | Notes |
+|-------|---------|-------|
+| `query` | `pokemon` | Required |
+| `minPrice` | `0` | Optional; empty for auto mode |
+| `maxPrice` | `200` | Optional; empty triggers auto price range |
+| `category` | `220` | Optional eBay category ID |
+| `condition` | `new` | Optional: `new` or `used` |
+| `filterStrength` | `4` | Auto mode strength: `3` strict, `4` normal, `6` loose |
+
+Example:
+
+```
+GET /api/search?query=pokemon&minPrice=&maxPrice=&category=220&condition=new&filterStrength=4
+```
 
 **Response**
-~~~json
+```json
 {
   "itemSummaries": [
     {
       "title": "...",
-      "price": { "value": "...", "currency": "USD" }
+      "price": "12.99",
+      "condition": "New",
+      "itemWebUrl": "...",
+      "username": "...",
+      "feedbackPercentage": "99.5",
+      "categoryName": "...",
+      "imageUrl": "...",
+      "itemCreationDate": "..."
     }
   ]
 }
-~~~
+```
 
----
+## Environment Variables
 
-## Open-source safety (read this before going public)
-
-If you make the repo public, keep it safe with these basics:
-
-- Never commit secrets (keep `CLIENT_ID` / `CLIENT_SECRET` only in `.env` locally + Vercel env vars)
-- Restrict CORS to your domain (avoid `*` in production)
-- Add rate limiting on `/api/search` (prevents abuse)
-- Consider simple caching for repeated queries
-- Respect eBay API rate limits and terms; consider caching and rate limiting for production.
-
-<details>
-  <summary><b>Should I make this repo public?</b></summary>
-
-**Usually yes**, if you're using it as a portfolio piece and you:
-- keep secrets out of Git
-- add basic abuse protection (CORS + rate limit)
-
-**Keep it private** if:
-- you don’t want others copying your implementation
-- you don’t want to maintain safeguards / operational risk
-</details>
-
----
-
-## Roadmap
-
-- Pagination + more filters (condition, category, shipping)
-- Caching + rate limiting
-- Better setup (requirements.txt / pyproject.toml)
-- Optional auth for the API
-
----
+| Variable | Description |
+|----------|-------------|
+| `CLIENT_ID` | eBay API client ID |
+| `CLIENT_SECRET` | eBay API client secret |
+| `CORS_ORIGINS` | Comma-separated allowed origins (default: `http://localhost:4200`) |
 
 ## License
 
-Source-available (Non-Commercial / No-Redistribution / No-Public-Deployment). See [`LICENSE`](LICENSE.md).
+Source-available (Non-Commercial / No-Redistribution / No-Public-Deployment). See [`LICENSE.md`](LICENSE.md).
