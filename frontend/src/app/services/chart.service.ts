@@ -46,7 +46,7 @@ function baseTooltip() {
 function baseGrid(): EChartsCoreOption {
   return {
     backgroundColor: 'transparent',
-    textStyle: { color: TEXT, fontFamily: 'Geist Mono, Courier New, monospace' },
+    textStyle: { color: TEXT, fontFamily: 'Space Grotesk, system-ui, sans-serif' },
     tooltip: baseTooltip(),
   };
 }
@@ -104,18 +104,16 @@ export class ChartService {
           return p ? `${p.name}<br/>${p.value} listings` : '';
         },
       },
-      grid: { left: 48, right: 16, top: 16, bottom: 64 },
+      grid: { left: 8, right: 8, top: 8, bottom: 44, containLabel: true },
       xAxis: {
         type: 'category',
         data: histogram.labels,
-        axisLabel: { color: TEXT, rotate: 35, fontSize: 10 },
+        axisLabel: { color: TEXT, rotate: 35, fontSize: 10, hideOverlap: true },
         axisLine: { lineStyle: { color: GRID } },
       },
       yAxis: {
         type: 'value',
-        name: 'Count',
         min: 0,
-        nameTextStyle: { color: TEXT },
         axisLabel: { color: TEXT },
         splitLine: { lineStyle: { color: GRID } },
       },
@@ -132,8 +130,8 @@ export class ChartService {
         {
           type: 'slider',
           xAxisIndex: 0,
-          height: 18,
-          bottom: 4,
+          height: 16,
+          bottom: 2,
           filterMode: 'none',
           minSpan: MIN_ZOOM_SPAN_PCT,
         },
@@ -141,6 +139,8 @@ export class ChartService {
       series: [
         {
           type: 'bar',
+          barCategoryGap: '18%',
+          barMaxWidth: 48,
           data: histogram.data.map((count, i) => ({
             value: count,
             binIndex: i,
@@ -169,16 +169,18 @@ export class ChartService {
         bottom: 0,
         left: 'center',
         width: '90%',
-        itemGap: 12,
-        textStyle: { color: TEXT, fontSize: 12 },
+        itemGap: 10,
+        itemWidth: 10,
+        itemHeight: 10,
+        textStyle: { color: TEXT, fontSize: 11 },
       },
       series: [
         {
           type: 'pie',
-          radius: ['42%', '66%'],
-          center: ['50%', '43%'],
+          radius: ['40%', '62%'],
+          center: ['50%', '44%'],
           avoidLabelOverlap: true,
-          label: { color: TEXT, fontSize: 11 },
+          label: { show: false },
           data: [
             { name: 'New', value: counts.New, itemStyle: { color: GREEN } },
             { name: 'Used', value: counts.Used, itemStyle: { color: ORANGE } },
@@ -211,8 +213,6 @@ export class ChartService {
 
     return this.buildScatterChart(
       seriesMap,
-      'Seller Score (%)',
-      'Price ($)',
       (p) => [parseFloat(items[p.itemIndex].feedbackPercentage || '0'), p.price],
       (p) =>
         `${p.title}<br/>$${p.price.toFixed(2)} · ${items[p.itemIndex].feedbackPercentage}% seller`,
@@ -252,8 +252,6 @@ export class ChartService {
 
     return this.buildScatterChart(
       seriesMap,
-      'Date Listed',
-      'Price ($)',
       (p) => [items[p.itemIndex].itemCreationDate!, p.price],
       (p) => {
         const date = new Date(items[p.itemIndex].itemCreationDate!);
@@ -271,8 +269,6 @@ export class ChartService {
 
   private buildScatterChart(
     seriesMap: Record<string, ChartPointMeta[]>,
-    xLabel: string,
-    yLabel: string,
     getValue: (p: ChartPointMeta) => [string | number, number],
     tooltipFn: (p: ChartPointMeta) => string,
     axisConfig: {
@@ -297,11 +293,10 @@ export class ChartService {
         },
       },
       legend: { top: 0, textStyle: { color: TEXT } },
-      grid: { left: 56, right: 24, top: 40, bottom: 48 },
+      // No axis name labels — panel titles already describe the chart.
+      grid: { left: 8, right: 12, top: 28, bottom: 24, containLabel: true },
       xAxis: {
         type: isTime ? 'time' : 'value',
-        name: xLabel,
-        nameTextStyle: { color: TEXT },
         axisLabel: {
           color: TEXT,
           hideOverlap: true,
@@ -317,11 +312,9 @@ export class ChartService {
       },
       yAxis: {
         type: 'value',
-        name: yLabel,
         scale: true,
         min: yBounds.min,
         max: yBounds.max,
-        nameTextStyle: { color: TEXT },
         axisLabel: {
           color: TEXT,
           formatter: (v: number) => `$${Math.round(v)}`,

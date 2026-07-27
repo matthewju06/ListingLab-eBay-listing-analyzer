@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { NavigationEnd, Router } from '@angular/router';
-import { BehaviorSubject, filter } from 'rxjs';
+import { IsActiveMatchOptions, NavigationEnd, Router } from '@angular/router';
+import { BehaviorSubject, Subject, filter } from 'rxjs';
 
 import { HistoryEntry } from '../core/models/search.models';
 
@@ -14,6 +14,13 @@ export interface ShellSearchState {
 
 const DEFAULT_STRENGTH = 4;
 
+const EXACT_URL_MATCH: IsActiveMatchOptions = {
+  paths: 'exact',
+  queryParams: 'exact',
+  fragment: 'ignored',
+  matrixParams: 'ignored',
+};
+
 @Injectable({ providedIn: 'root' })
 export class ShellSearchService {
   private readonly router = inject(Router);
@@ -24,6 +31,10 @@ export class ShellSearchService {
 
   private readonly historyOpenSubject = new BehaviorSubject<boolean>(false);
   readonly historyOpen$ = this.historyOpenSubject.asObservable();
+
+  /** Fires when search is re-submitted with the same URL (Angular skips navigation). */
+  private readonly forceSearchSubject = new Subject<void>();
+  readonly forceSearch$ = this.forceSearchSubject.asObservable();
 
   constructor() {
     this.syncFromUrl(this.router.url);
@@ -47,10 +58,14 @@ export class ShellSearchService {
 
     const minPrice = options?.minPrice ?? '';
     const maxPrice = options?.maxPrice ?? '';
+    const queryParams = this.buildQueryParams(q, minPrice, maxPrice);
+    const target = this.router.createUrlTree(['/search'], { queryParams });
+    const sameUrl = this.router.isActive(target, EXACT_URL_MATCH);
 
-    void this.router.navigate(['/search'], {
-      queryParams: this.buildQueryParams(q, minPrice, maxPrice),
-      replaceUrl: options?.replaceUrl ?? false,
+    void this.router.navigateByUrl(target, { replaceUrl: options?.replaceUrl ?? false }).then(() => {
+      if (sameUrl) {
+        this.forceSearchSubject.next();
+      }
     });
   }
 

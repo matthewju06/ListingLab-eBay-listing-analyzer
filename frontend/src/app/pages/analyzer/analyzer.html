@@ -156,42 +156,147 @@
       <div class="results-header">
         <div>
           <h2>Search Results</h2>
-          <p class="results-hint">
-            Use column filters for price ranges and condition (contains / not contains). Click Preview to open a listing.
-          </p>
+          @if (isMobileUi()) {
+            <p class="results-hint">
+              Tap a card to preview. Sort and filter below.
+            </p>
+          } @else {
+            <p class="results-hint">
+              Use column filters for price ranges and condition (contains / not contains). Click Preview to open a listing.
+            </p>
+          }
         </div>
         <div class="results-header-actions">
           <button class="download-btn unselectable-text" (click)="downloadCsv()">Download All Data</button>
-          <button type="button" class="expand-chart-btn" aria-label="Expand table"
-            (click)="openExpandedTable()">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="15 3 21 3 21 9"></polyline>
-              <polyline points="9 21 3 21 3 15"></polyline>
-              <line x1="21" y1="3" x2="14" y2="10"></line>
-              <line x1="3" y1="21" x2="10" y2="14"></line>
-            </svg>
-          </button>
+          @if (!isMobileUi()) {
+            <button type="button" class="expand-chart-btn" aria-label="Expand table"
+              (click)="openExpandedTable()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <polyline points="9 21 3 21 3 15"></polyline>
+                <line x1="21" y1="3" x2="14" y2="10"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+              </svg>
+            </button>
+          }
         </div>
       </div>
 
-      <ag-grid-angular
-        class="results-grid"
-        [theme]="gridTheme"
-        [rowData]="rowData"
-        [columnDefs]="columnDefs"
-        [defaultColDef]="defaultColDef"
-        [rowSelection]="rowSelection"
-        [context]="gridContext"
-        [getRowId]="getRowId"
-        [rowHeight]="72"
-        [animateRows]="true"
-        [pagination]="true"
-        [paginationPageSize]="50"
-        [paginationPageSizeSelector]="[25, 50, 100]"
-        [suppressCellFocus]="true"
-        (gridReady)="onGridReady($event)"
-      />
+      @if (isMobileUi()) {
+        <div class="mobile-results-controls">
+          <label class="mobile-sort-field">
+            <span>Sort by</span>
+            <select [(ngModel)]="mobileSortBy" name="mobileSortBy">
+              <option value="price">Price</option>
+              <option value="title">Title</option>
+              <option value="condition">Condition</option>
+              <option value="username">Seller</option>
+              <option value="feedbackPercentage">Feedback</option>
+            </select>
+          </label>
+          <label class="mobile-sort-field">
+            <span>Order</span>
+            <select [(ngModel)]="mobileSortOrder" name="mobileSortOrder">
+              <option value="asc">Ascending</option>
+              <option value="desc">Descending</option>
+            </select>
+          </label>
+          @if (mobileUsesNumericFilter) {
+            <label class="mobile-sort-field">
+              <span>Min {{ mobileNumericFilterUnit }}</span>
+              <input
+                type="number"
+                name="mobileFilterMin"
+                [(ngModel)]="mobileFilterMin"
+                [min]="0"
+                [step]="mobileSortBy === 'feedbackPercentage' ? 1 : 0.01"
+                [max]="mobileSortBy === 'feedbackPercentage' ? 100 : null"
+                placeholder="Any"
+              />
+            </label>
+            <label class="mobile-sort-field">
+              <span>Max {{ mobileNumericFilterUnit }}</span>
+              <input
+                type="number"
+                name="mobileFilterMax"
+                [(ngModel)]="mobileFilterMax"
+                [min]="0"
+                [step]="mobileSortBy === 'feedbackPercentage' ? 1 : 0.01"
+                [max]="mobileSortBy === 'feedbackPercentage' ? 100 : null"
+                placeholder="Any"
+              />
+            </label>
+          } @else {
+            <label class="mobile-sort-field mobile-sort-field-wide">
+              <span>Include {{ mobileTextFilterFieldLabel }}</span>
+              <input
+                type="text"
+                name="mobileFilterInclude"
+                [(ngModel)]="mobileFilterInclude"
+                [placeholder]="'Contains…'"
+              />
+            </label>
+            <label class="mobile-sort-field mobile-sort-field-wide">
+              <span>Exclude {{ mobileTextFilterFieldLabel }}</span>
+              <input
+                type="text"
+                name="mobileFilterExclude"
+                [(ngModel)]="mobileFilterExclude"
+                [placeholder]="'Does not contain…'"
+              />
+            </label>
+          }
+        </div>
+
+        <div class="mobile-listing-cards">
+          @for (row of mobileSortedRows; track row.rowIndex) {
+            <button
+              type="button"
+              class="mobile-listing-card"
+              [class.highlighted]="highlightedRow === row.rowIndex"
+              (click)="openListingPreview(row)"
+            >
+              <div class="mobile-listing-media">
+                <img [src]="row.imageUrl || 'https://img.icons8.com/office40/512/cancel-2.png'" [alt]="row.title" loading="lazy" />
+              </div>
+              <div class="mobile-listing-body">
+                <div class="mobile-listing-title">{{ row.title }}</div>
+                <div class="mobile-listing-price">US ${{ row.price.toFixed(2) }}</div>
+                <div class="mobile-listing-meta">
+                  <span>{{ row.condition }}</span>
+                  <span aria-hidden="true">·</span>
+                  <span>{{ row.username }}</span>
+                  @if (row.feedbackPercentage != null) {
+                    <span aria-hidden="true">·</span>
+                    <span>{{ row.feedbackPercentage }}%</span>
+                  }
+                </div>
+              </div>
+            </button>
+          }
+        </div>
+      } @else {
+        <div class="results-grid-shell">
+          <ag-grid-angular
+            class="results-grid desktop-results-grid"
+            [theme]="gridTheme"
+            [rowData]="rowData"
+            [columnDefs]="columnDefs"
+            [defaultColDef]="defaultColDef"
+            [rowSelection]="rowSelection"
+            [context]="gridContext"
+            [getRowId]="getRowId"
+            [rowHeight]="72"
+            [animateRows]="true"
+            [pagination]="true"
+            [paginationPageSize]="50"
+            [paginationPageSizeSelector]="[25, 50, 100]"
+            [suppressCellFocus]="true"
+            (gridReady)="onGridReady($event)"
+          />
+        </div>
+      }
     </div>
   }
 </div>
@@ -298,23 +403,25 @@
         </button>
       </div>
       <div class="modal-body table-expand-body">
-        <ag-grid-angular
-          class="results-grid expanded-results-grid"
-          [theme]="gridTheme"
-          [rowData]="rowData"
-          [columnDefs]="columnDefs"
-          [defaultColDef]="defaultColDef"
-          [rowSelection]="rowSelection"
-          [context]="gridContext"
-          [getRowId]="getRowId"
-          [rowHeight]="72"
-          [animateRows]="true"
-          [pagination]="true"
-          [paginationPageSize]="50"
-          [paginationPageSizeSelector]="[25, 50, 100]"
-          [suppressCellFocus]="true"
-          (gridReady)="onExpandedGridReady($event)"
-        />
+        <div class="results-grid-shell">
+          <ag-grid-angular
+            class="results-grid expanded-results-grid"
+            [theme]="gridTheme"
+            [rowData]="rowData"
+            [columnDefs]="columnDefs"
+            [defaultColDef]="defaultColDef"
+            [rowSelection]="rowSelection"
+            [context]="gridContext"
+            [getRowId]="getRowId"
+            [rowHeight]="72"
+            [animateRows]="true"
+            [pagination]="true"
+            [paginationPageSize]="50"
+            [paginationPageSizeSelector]="[25, 50, 100]"
+            [suppressCellFocus]="true"
+            (gridReady)="onExpandedGridReady($event)"
+          />
+        </div>
       </div>
     </div>
   </div>

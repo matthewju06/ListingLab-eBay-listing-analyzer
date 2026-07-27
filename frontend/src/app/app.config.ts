@@ -1,6 +1,6 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZoneChangeDetection } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withRouterConfig } from '@angular/router';
 import * as echarts from 'echarts';
 import { provideEchartsCore } from 'ngx-echarts';
 
@@ -11,7 +11,7 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: false }),
     provideBrowserGlobalErrorListeners(),
     provideHttpClient(),
-    provideRouter(routes),
+    provideRouter(routes, withRouterConfig({ onSameUrlNavigation: 'reload' })),
     provideEchartsCore({ echarts }),
   ],
 };

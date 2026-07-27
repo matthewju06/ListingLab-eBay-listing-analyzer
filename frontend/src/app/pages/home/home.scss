@@ -14,7 +14,7 @@
   font-size: clamp(2.8em, 8vw, 4.5em);
   font-weight: 700;
   color: var(--accent-blue);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.04em;
 }
 
 .home-tagline {
@@ -34,14 +34,15 @@
 
 .home-search input {
   flex: 1;
-  height: 48px;
+  height: 56px;
+  min-height: 56px;
   padding: 0 18px;
   border-radius: 12px;
   border: 1px solid var(--border-color);
   background: var(--bg-tertiary);
   color: var(--text-primary);
   font-family: inherit;
-  font-size: 15px;
+  font-size: 16px;
   outline: none;
 }
 
@@ -50,14 +51,15 @@
 }
 
 .home-search button {
-  height: 48px;
+  height: 56px;
+  min-height: 56px;
   padding: 0 28px;
   border: none;
   border-radius: 12px;
   background: #0064d2;
   color: #fff;
   font-family: inherit;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
 }

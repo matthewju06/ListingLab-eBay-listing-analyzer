@@ -73,7 +73,13 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
   private gridApi: GridApi<ListingRow> | null = null;
   private expandedGridApi: GridApi<ListingRow> | null = null;
   private queryParamsSub: Subscription | null = null;
+  private forceSearchSub: Subscription | null = null;
   private lastSearchKey = '';
+  private resizeSettleTimers: ReturnType<typeof setTimeout>[] = [];
+  private readonly onViewportResize = (): void => this.syncViewportMode();
+
+  /** True below the mobile results breakpoint — drives @if mount (not display:none). */
+  readonly isMobileUi = signal(false);
 
   readonly categoryOptions = CATEGORY_OPTIONS;
 
@@ -98,6 +104,14 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
   readonly expandedChart = signal<'seller' | 'date' | null>(null);
   readonly expandedTable = signal(false);
   readonly previewListing = signal<ListingRow | null>(null);
+
+  /** Mobile results: sort / filter (desktop uses AG Grid). */
+  mobileSortBy: 'price' | 'title' | 'condition' | 'username' | 'feedbackPercentage' = 'price';
+  mobileSortOrder: 'asc' | 'desc' = 'asc';
+  mobileFilterInclude = '';
+  mobileFilterExclude = '';
+  mobileFilterMin = '';
+  mobileFilterMax = '';
 
   histogramOptions: EChartsCoreOption = {};
   donutOptions: EChartsCoreOption = {};
@@ -129,7 +143,7 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
     accentColor: '#0064D2',
     borderColor: '#333333',
     browserColorScheme: 'dark',
-    fontFamily: "'Geist Mono', 'Courier New', monospace",
+    fontFamily: "'Space Grotesk', system-ui, sans-serif",
     fontSize: 13,
     headerFontSize: 12,
     spacing: 6,
@@ -254,6 +268,72 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
     return this.maxPrice !== '';
   }
 
+  get mobileSortedRows(): ListingRow[] {
+    let rows = [...this.rowData];
+    const include = this.mobileFilterInclude.trim().toLowerCase();
+    const exclude = this.mobileFilterExclude.trim().toLowerCase();
+    const min = this.mobileFilterMin !== '' ? Number(this.mobileFilterMin) : null;
+    const max = this.mobileFilterMax !== '' ? Number(this.mobileFilterMax) : null;
+    const useNumericRange =
+      this.mobileSortBy === 'price' || this.mobileSortBy === 'feedbackPercentage';
+
+    if (useNumericRange) {
+      rows = rows.filter((r) => {
+        const value = this.mobileSortBy === 'price' ? r.price : r.feedbackPercentage;
+        if (value == null || Number.isNaN(Number(value))) {
+          return min == null && max == null;
+        }
+        const n = Number(value);
+        if (min != null && !Number.isNaN(min) && n < min) return false;
+        if (max != null && !Number.isNaN(max) && n > max) return false;
+        return true;
+      });
+    } else {
+      const field = this.mobileSortBy as 'title' | 'condition' | 'username';
+      if (include || exclude) {
+        rows = rows.filter((r) => {
+          const value = String(r[field] ?? '').toLowerCase();
+          if (include && !value.includes(include)) return false;
+          if (exclude && value.includes(exclude)) return false;
+          return true;
+        });
+      }
+    }
+
+    const dir = this.mobileSortOrder === 'asc' ? 1 : -1;
+    rows.sort((a, b) => {
+      const av = a[this.mobileSortBy];
+      const bv = b[this.mobileSortBy];
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      if (typeof av === 'number' && typeof bv === 'number') {
+        return (av - bv) * dir;
+      }
+      return String(av).localeCompare(String(bv), undefined, { sensitivity: 'base' }) * dir;
+    });
+    return rows;
+  }
+
+  get mobileUsesNumericFilter(): boolean {
+    return this.mobileSortBy === 'price' || this.mobileSortBy === 'feedbackPercentage';
+  }
+
+  get mobileNumericFilterUnit(): string {
+    return this.mobileSortBy === 'feedbackPercentage' ? '%' : '$';
+  }
+
+  get mobileTextFilterFieldLabel(): string {
+    switch (this.mobileSortBy) {
+      case 'condition':
+        return 'condition';
+      case 'username':
+        return 'seller';
+      default:
+        return 'title';
+    }
+  }
+
   readonly expandedChartTitle = computed(() =>
     this.expandedChart() === 'seller' ? 'Price vs Seller Score' : 'Price by Listing Date',
   );
@@ -265,6 +345,9 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
   getRowId = (params: GetRowIdParams<ListingRow>): string => String(params.data.rowIndex);
 
   ngOnInit(): void {
+    this.isMobileUi.set(this.isMobileViewport());
+    window.addEventListener('resize', this.onViewportResize, { passive: true });
+
     this.queryParamsSub = this.route.queryParamMap.subscribe((params) => {
       this.hydrateFromParams(params);
       const q = params.get('q')?.trim();
@@ -277,15 +360,28 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
       this.lastSearchKey = key;
       this.executeSearch();
     });
+
+    // Same URL re-submit (search / Apply) does not change query params — force a refresh.
+    this.forceSearchSub = this.shellSearch.forceSearch$.subscribe(() => {
+      this.hydrateFromParams(this.route.snapshot.queryParamMap);
+      const q = this.query.trim();
+      if (!q) return;
+      this.lastSearchKey = this.route.snapshot.queryParamMap.toString();
+      this.executeSearch();
+    });
   }
 
   ngOnDestroy(): void {
+    window.removeEventListener('resize', this.onViewportResize);
+    this.clearResizeSettleTimers();
     this.queryParamsSub?.unsubscribe();
+    this.forceSearchSub?.unsubscribe();
     this.bodyScroll.unlock('analyzer-modal');
   }
 
   onGridReady(event: GridReadyEvent<ListingRow>): void {
     this.gridApi = event.api;
+    this.refreshDesktopGridLayout();
     if (this.highlightedRow != null) {
       this.highlightRow(this.highlightedRow);
     }
@@ -467,17 +563,109 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
     this.dateScatterOptions = this.chartService.buildDateScatterOptions(this.items);
   }
 
+  private isMobileViewport(): boolean {
+    return window.matchMedia('(max-width: 768px)').matches;
+  }
+
+  private syncViewportMode(): void {
+    const mobile = this.isMobileViewport();
+    const wasMobile = this.isMobileUi();
+
+    if (mobile === wasMobile) {
+      if (!mobile) {
+        requestAnimationFrame(() => this.refreshDesktopGridLayout());
+      }
+      return;
+    }
+
+    this.isMobileUi.set(mobile);
+
+    if (mobile) {
+      this.gridApi = null;
+      if (this.expandedTable()) {
+        this.expandedTable.set(false);
+        this.syncBodyScrollLock();
+      }
+    }
+
+    // Charts keep stale canvas metrics across breakpoint changes — rebuild options.
+    if (this.items.length) {
+      this.buildCharts();
+    }
+
+    this.cdr.detectChanges();
+    this.settleLayoutAfterBreakpointChange();
+  }
+
+  private settleLayoutAfterBreakpointChange(): void {
+    this.clearResizeSettleTimers();
+
+    const settle = () => {
+      this.refreshDesktopGridLayout();
+      this.clampWindowScrollToContent();
+      window.dispatchEvent(new Event('resize'));
+    };
+
+    requestAnimationFrame(() => {
+      settle();
+      requestAnimationFrame(() => {
+        settle();
+        this.resizeSettleTimers.push(setTimeout(settle, 50));
+        this.resizeSettleTimers.push(setTimeout(settle, 150));
+        this.resizeSettleTimers.push(setTimeout(settle, 350));
+      });
+    });
+  }
+
+  private clearResizeSettleTimers(): void {
+    for (const timer of this.resizeSettleTimers) {
+      clearTimeout(timer);
+    }
+    this.resizeSettleTimers = [];
+  }
+
+  private refreshDesktopGridLayout(): void {
+    if (!this.gridApi || this.isMobileUi()) return;
+    this.gridApi.sizeColumnsToFit();
+    this.gridApi.resetRowHeights();
+  }
+
+  /** Clamp scroll to real content bottom (ignores ghost overflow past .container). */
+  private clampWindowScrollToContent(): void {
+    const container = document.querySelector('.container') as HTMLElement | null;
+    const contentBottom = container
+      ? container.getBoundingClientRect().bottom + window.scrollY
+      : document.documentElement.scrollHeight;
+    const maxScroll = Math.max(0, contentBottom - window.innerHeight);
+    if (window.scrollY > maxScroll + 1) {
+      window.scrollTo({ top: maxScroll, behavior: 'auto' });
+    }
+  }
+
+  private clampWindowScroll(): void {
+    this.clampWindowScrollToContent();
+  }
+
   private highlightRow(index: number): void {
     this.highlightedRow = index;
     if (this.expandedChart()) {
       this.expandedChart.set(null);
       this.syncBodyScrollLock();
     }
+    this.cdr.detectChanges();
 
     requestAnimationFrame(() => {
       if (this.expandedTable()) {
         this.selectRowOnApi(this.expandedGridApi, index);
         return;
+      }
+
+      if (this.isMobileUi()) {
+        const mobileCard = document.querySelector('.mobile-listing-card.highlighted');
+        if (mobileCard) {
+          mobileCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          return;
+        }
       }
 
       document.querySelector('.results-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -532,6 +720,10 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
     this.previewListing.set(null);
     this.appliedMinPrice = null;
     this.appliedMaxPrice = null;
+    this.mobileFilterInclude = '';
+    this.mobileFilterExclude = '';
+    this.mobileFilterMin = '';
+    this.mobileFilterMax = '';
     this.syncBodyScrollLock();
     this.cdr.detectChanges();
 
