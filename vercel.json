@@ -2,8 +2,11 @@
   "version": 2,
   "builds": [
     {
-      "src": "backend/app/main.py",
-      "use": "@vercel/python"
+      "src": "api/index.py",
+      "use": "@vercel/python",
+      "config": {
+        "includeFiles": ["backend/**"]
+      }
     },
     {
       "src": "frontend/package.json",
@@ -16,11 +19,15 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "backend/app/main.py"
+      "dest": "api/index.py"
+    },
+    {
+      "src": "/(.+\\.[a-zA-Z0-9]+)$",
+      "dest": "/frontend/$1"
     },
     {
       "src": "/(.*)",
-      "dest": "frontend/dist/frontend/browser/$1"
+      "dest": "/frontend/index.html"
     }
   ]
 }
