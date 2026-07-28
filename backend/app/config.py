@@ -12,8 +12,11 @@ class Settings(BaseSettings):
     client_id: str = ""
     client_secret: str = ""
     cors_origins: str = "http://localhost:4200"
+    database_url: str = ""
+    # Temporary until Clerk JWT auth is wired. Frontend/API can send X-User-Id.
+    dev_user_id: str = "dev-user"
 
-    @field_validator("client_id", "client_secret", mode="before")
+    @field_validator("client_id", "client_secret", "database_url", "dev_user_id", mode="before")
     @classmethod
     def strip_credential(cls, value: object) -> object:
         if isinstance(value, str):
@@ -31,6 +34,14 @@ class Settings(BaseSettings):
                 "Set them in Vercel → Project Settings → Environment Variables "
                 "(Production), then redeploy."
             )
+
+    def require_database_url(self) -> str:
+        if not self.database_url:
+            raise RuntimeError(
+                "Missing DATABASE_URL. Create a Neon Postgres database and set "
+                "DATABASE_URL in backend/.env (and Vercel env vars)."
+            )
+        return self.database_url
 
 
 settings = Settings()

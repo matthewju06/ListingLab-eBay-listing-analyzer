@@ -14,13 +14,16 @@ Search, filter, and analyze eBay listings with statistical price-range detection
 
 ```
 ├── backend/
+│   ├── alembic/              # DB migrations
 │   ├── app/
 │   │   ├── api/routes/       # HTTP route handlers
 │   │   ├── clients/          # External API clients (eBay)
+│   │   ├── db/               # SQLAlchemy engine + ORM models
 │   │   ├── models/           # Pydantic request/response schemas
 │   │   ├── services/         # Business logic (search, price analysis)
 │   │   ├── config.py         # Settings via pydantic-settings
 │   │   └── main.py           # FastAPI app entry point
+│   ├── alembic.ini
 │   └── requirements.txt
 ├── frontend/
 │   └── src/app/
@@ -55,8 +58,11 @@ python -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
-cp .env.example .env        # Add CLIENT_ID and CLIENT_SECRET
+cp .env.example .env        # Add CLIENT_ID, CLIENT_SECRET, DATABASE_URL
 uvicorn app.main:app --reload --port 8000
+
+# Apply DB migrations (Neon Postgres)
+alembic upgrade head
 ```
 
 ### Frontend
@@ -116,6 +122,17 @@ GET /api/search?query=pokemon&minPrice=&maxPrice=&category=220&condition=new&fil
 }
 ```
 
+### Persistence (Neon Postgres)
+
+Scoped by `user_id` (today: `X-User-Id` header or `DEV_USER_ID`; later: Clerk JWT).
+
+| Method | Path | Notes |
+|--------|------|-------|
+| GET/POST | `/api/saved-searches` | List / create saved searches |
+| GET/PATCH/DELETE | `/api/saved-searches/{id}` | Read / update / delete |
+| GET/POST | `/api/tracked-listings` | List / create tracked listings |
+| GET/PATCH/DELETE | `/api/tracked-listings/{id}` | Read / update / delete |
+
 ## Environment Variables
 
 | Variable | Description |
@@ -123,6 +140,14 @@ GET /api/search?query=pokemon&minPrice=&maxPrice=&category=220&condition=new&fil
 | `CLIENT_ID` | eBay API client ID |
 | `CLIENT_SECRET` | eBay API client secret |
 | `CORS_ORIGINS` | Comma-separated allowed origins (default: `http://localhost:4200`) |
+| `DATABASE_URL` | Neon Postgres connection string |
+| `DEV_USER_ID` | Fallback user id before Clerk auth (default: `dev-user`) |
+
+## Roadmap (auth)
+
+1. Neon + these tables (current)
+2. Wire Saved / Tracking UI to the APIs
+3. **Clerk** auth — replace `X-User-Id` with verified JWT `sub`
 
 ## License
 

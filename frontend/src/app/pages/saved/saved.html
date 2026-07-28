@@ -1,0 +1,63 @@
+<section class="persist-page">
+  <header class="persist-header">
+    <h1>Saved Searches</h1>
+    <p>Pin queries and filters you want to reopen quickly.</p>
+  </header>
+
+  @if (loading()) {
+    <div class="persist-banner loading">Loading saved searches…</div>
+  } @else if (error()) {
+    <div class="persist-banner error" role="alert">
+      {{ error() }}
+      <div class="persist-card-actions" style="margin-top: 10px">
+        <button type="button" class="persist-btn" (click)="reload()">Retry</button>
+      </div>
+    </div>
+  }
+
+  @if (!loading() && !error() && items().length === 0) {
+    <div class="persist-empty">
+      <h2>No saved searches yet</h2>
+      <p>Save a search from the analyzer (coming soon), or wire the API and create one via /docs.</p>
+      <div class="persist-card-actions" style="justify-content: center; margin-top: 16px">
+        <button type="button" class="persist-btn primary" (click)="goHome()">Back to search</button>
+      </div>
+    </div>
+  }
+
+  @if (!loading() && items().length > 0) {
+    <div class="persist-list">
+      @for (item of items(); track item.id) {
+        <article class="persist-card">
+          <div class="persist-card-main">
+            <h2 class="persist-card-title">{{ displayTitle(item) }}</h2>
+            @if (item.name?.trim()) {
+              <p class="persist-card-meta">
+                <span>Query: <span class="mono">{{ item.query }}</span></span>
+              </p>
+            }
+            <p class="persist-card-meta">
+              <span>{{ categoryLabel(item.category) }}</span>
+              <span>{{ conditionLabel(item.condition) }}</span>
+              <span class="mono">{{ priceLabel(item) }}</span>
+              <span>Updated {{ formatDate(item.updatedAt) }}</span>
+            </p>
+          </div>
+          <div class="persist-card-actions">
+            <button type="button" class="persist-btn primary" (click)="runSearch(item)">
+              Run search
+            </button>
+            <button
+              type="button"
+              class="persist-btn danger"
+              [disabled]="busyId() === item.id"
+              (click)="remove(item)"
+            >
+              Delete
+            </button>
+          </div>
+        </article>
+      }
+    </div>
+  }
+</section>

@@ -1,0 +1,136 @@
+<section class="persist-page">
+  <header class="persist-header">
+    <h1>Price Tracking</h1>
+    <p>Follow listings and set target prices. Alerts come later — this page stores what you care about.</p>
+  </header>
+
+  <form class="persist-form" (submit)="submitManual($event)">
+    <h2>Add listing manually</h2>
+    <div class="persist-form-grid">
+      <div class="persist-field full">
+        <label for="track-title">Title</label>
+        <input id="track-title" name="title" [(ngModel)]="formTitle" maxlength="500" required />
+      </div>
+      <div class="persist-field full">
+        <label for="track-url">eBay URL</label>
+        <input
+          id="track-url"
+          name="url"
+          type="url"
+          [(ngModel)]="formUrl"
+          maxlength="1000"
+          placeholder="https://www.ebay.com/itm/..."
+          required
+        />
+      </div>
+      <div class="persist-field">
+        <label for="track-min">Target min ($)</label>
+        <input id="track-min" name="min" inputmode="decimal" [(ngModel)]="formTargetMin" />
+      </div>
+      <div class="persist-field">
+        <label for="track-max">Target max ($)</label>
+        <input id="track-max" name="max" inputmode="decimal" [(ngModel)]="formTargetMax" />
+      </div>
+      <div class="persist-field full">
+        <label for="track-notes">Notes</label>
+        <textarea id="track-notes" name="notes" [(ngModel)]="formNotes" maxlength="2000"></textarea>
+      </div>
+    </div>
+    <div class="persist-form-actions">
+      <button type="submit" class="persist-btn primary" [disabled]="saving()">
+        {{ saving() ? 'Adding…' : 'Add tracking' }}
+      </button>
+    </div>
+  </form>
+
+  @if (loading()) {
+    <div class="persist-banner loading">Loading tracked listings…</div>
+  } @else if (error()) {
+    <div class="persist-banner error" role="alert">
+      {{ error() }}
+      <div class="persist-card-actions" style="margin-top: 10px">
+        <button type="button" class="persist-btn" (click)="reload()">Retry</button>
+      </div>
+    </div>
+  }
+
+  @if (!loading() && !error() && items().length === 0) {
+    <div class="persist-empty">
+      <h2>Nothing tracked yet</h2>
+      <p>Add a listing above, or create one via the API /docs while you wire HttpClient.</p>
+    </div>
+  }
+
+  @if (!loading() && items().length > 0) {
+    <div class="persist-list">
+      @for (item of items(); track item.id) {
+        <article class="persist-card">
+          <div class="persist-card-row">
+            @if (item.imageUrl) {
+              <img class="persist-thumb" [src]="item.imageUrl" [alt]="item.title" />
+            }
+            <div class="persist-card-main">
+              <h2 class="persist-card-title">{{ item.title }}</h2>
+              <p class="persist-card-meta">
+                @if (item.condition) {
+                  <span>{{ item.condition }}</span>
+                }
+                @if (item.sellerUsername) {
+                  <span>{{ item.sellerUsername }}</span>
+                }
+                <span class="mono">Last seen {{ formatPrice(item.lastSeenPrice) }}</span>
+                <span class="mono">{{ targetLabel(item) }}</span>
+                <span>Updated {{ formatDate(item.updatedAt) }}</span>
+              </p>
+
+              @if (editingNotesId() === item.id) {
+                <div class="persist-notes-edit">
+                  <textarea
+                    [ngModel]="notesDraft()"
+                    (ngModelChange)="notesDraft.set($event)"
+                    maxlength="2000"
+                    placeholder="Notes"
+                  ></textarea>
+                  <div class="persist-card-actions">
+                    <button
+                      type="button"
+                      class="persist-btn primary"
+                      [disabled]="busyId() === item.id"
+                      (click)="saveNotes(item)"
+                    >
+                      Save notes
+                    </button>
+                    <button type="button" class="persist-btn" (click)="cancelEditNotes()">Cancel</button>
+                  </div>
+                </div>
+              } @else if (item.notes) {
+                <p class="persist-card-notes">{{ item.notes }}</p>
+              }
+            </div>
+          </div>
+          <div class="persist-card-actions">
+            <a
+              class="persist-btn linkish primary"
+              [href]="item.itemWebUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Open on eBay
+            </a>
+            @if (editingNotesId() !== item.id) {
+              <button type="button" class="persist-btn" (click)="startEditNotes(item)">Edit notes</button>
+            }
+            <button
+              type="button"
+              class="persist-btn danger"
+              [disabled]="busyId() === item.id"
+              (click)="remove(item)"
+            >
+              Delete
+            </button>
+          </div>
+        </article>
+      }
+    </div>
+  }
+</section>
