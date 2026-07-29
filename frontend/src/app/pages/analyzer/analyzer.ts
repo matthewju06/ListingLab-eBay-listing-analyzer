@@ -93,6 +93,15 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
   refineMaxPrice = '';
   appliedMinPrice: number | null = null;
   appliedMaxPrice: number | null = null;
+  suggestedMinPrice: number | null = null;
+  suggestedMaxPrice: number | null = null;
+  suggestedCoverage: number | null = null;
+  /** Price bar starts open; user can collapse to a one-line summary. */
+  readonly priceRefineExpanded = signal(true);
+
+  togglePriceRefine(): void {
+    this.priceRefineExpanded.update((open) => !open);
+  }
 
   items: ItemSummary[] = [];
   rowData: ListingRow[] = [];
@@ -268,6 +277,15 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
     return this.maxPrice !== '';
   }
 
+  get hasSuggestion(): boolean {
+    return this.suggestedMinPrice != null && this.suggestedMaxPrice != null;
+  }
+
+  get suggestedCoveragePercent(): number | null {
+    if (this.suggestedCoverage == null) return null;
+    return Math.round(this.suggestedCoverage * 100);
+  }
+
   get mobileSortedRows(): ListingRow[] {
     let rows = [...this.rowData];
     const include = this.mobileFilterInclude.trim().toLowerCase();
@@ -355,7 +373,7 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
         this.lastSearchKey = '';
         return;
       }
-      const key = params.toString();
+      const key = this.paramsKey(params);
       if (key === this.lastSearchKey) return;
       this.lastSearchKey = key;
       this.executeSearch();
@@ -366,7 +384,7 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
       this.hydrateFromParams(this.route.snapshot.queryParamMap);
       const q = this.query.trim();
       if (!q) return;
-      this.lastSearchKey = this.route.snapshot.queryParamMap.toString();
+      this.lastSearchKey = this.paramsKey(this.route.snapshot.queryParamMap);
       this.executeSearch();
     });
   }
@@ -691,6 +709,15 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Stable identity for a query-param set (ParamMap has no usable toString). */
+  private paramsKey(params: ParamMap): string {
+    return params.keys
+      .slice()
+      .sort()
+      .map((key) => `${key}=${params.getAll(key).join(',')}`)
+      .join('&');
+  }
+
   private hydrateFromParams(params: ParamMap): void {
     this.query = params.get('q') ?? '';
     this.category = params.get('category') ?? '';
@@ -720,6 +747,9 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
     this.previewListing.set(null);
     this.appliedMinPrice = null;
     this.appliedMaxPrice = null;
+    this.suggestedMinPrice = null;
+    this.suggestedMaxPrice = null;
+    this.suggestedCoverage = null;
     this.mobileFilterInclude = '';
     this.mobileFilterExclude = '';
     this.mobileFilterMin = '';
@@ -745,10 +775,26 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
           this.items = response.itemSummaries;
           this.appliedMinPrice = response.appliedMinPrice ?? null;
           this.appliedMaxPrice = response.appliedMaxPrice ?? null;
+          this.suggestedMinPrice = response.suggestedMinPrice ?? null;
+          this.suggestedMaxPrice = response.suggestedMaxPrice ?? null;
+          this.suggestedCoverage = response.suggestedCoverage ?? null;
 
-          if (this.appliedMinPrice != null && this.appliedMaxPrice != null) {
+          if (refined && this.appliedMinPrice != null && this.appliedMaxPrice != null) {
             this.refineMinPrice = String(Math.round(this.appliedMinPrice * 100) / 100);
             this.refineMaxPrice = String(Math.round(this.appliedMaxPrice * 100) / 100);
+          } else if (!refined && this.hasSuggestion) {
+            // Prefill only — does not re-query until the user clicks Apply.
+            this.refineMinPrice = String(Math.round(this.suggestedMinPrice! * 100) / 100);
+            this.refineMaxPrice = String(Math.round(this.suggestedMaxPrice! * 100) / 100);
+            this.priceRefineExpanded.set(true);
+            const pct = this.suggestedCoveragePercent;
+            this.filterMessage =
+              pct != null
+                ? `Densest price cluster (~${pct}% density) prefilled — click Apply to re-query eBay in that range`
+                : 'Suggested price cluster prefilled — click Apply to re-query eBay in that range';
+          } else if (!refined) {
+            this.refineMinPrice = '';
+            this.refineMaxPrice = '';
           }
 
           if (!this.items.length) {

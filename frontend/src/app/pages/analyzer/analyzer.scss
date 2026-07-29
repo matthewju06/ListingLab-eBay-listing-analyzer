@@ -16,36 +16,219 @@
 
 .price-refine-bar {
   display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  margin: 0 0 20px;
+  padding: 14px 16px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  transition:
+    border-color 0.2s linear,
+    background 0.2s linear,
+    box-shadow 0.2s linear,
+    padding 0.22s linear;
+}
+
+.price-refine-bar.is-collapsed {
+  padding: 8px 12px;
+}
+
+.price-refine-bar.is-suggested {
+  border-color: rgba(0, 100, 210, 0.55);
+  background: linear-gradient(135deg, rgba(0, 100, 210, 0.16), rgba(26, 26, 26, 0.95) 42%);
+  box-shadow: inset 3px 0 0 var(--accent-blue);
+}
+
+.price-refine-bar.is-refined {
+  border-color: rgba(74, 222, 128, 0.35);
+  box-shadow: inset 3px 0 0 var(--accent-green);
+}
+
+.price-refine-top {
+  width: 100%;
+}
+
+.price-refine-top-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin: 0;
+  padding: 2px 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.price-refine-title {
+  margin: 0;
+  flex-shrink: 0;
+  font-size: clamp(1.15em, 2.2vw, 1.4em);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  transition: font-size 0.22s linear, color 0.22s linear;
+}
+
+.price-refine-bar.is-collapsed .price-refine-title {
+  font-size: 0.85em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-tertiary);
+}
+
+.price-refine-bar.is-suggested .price-refine-title {
+  color: #9ec5f7;
+}
+
+.price-refine-bar.is-suggested.is-collapsed .price-refine-title {
+  color: #7eb6f5;
+}
+
+.price-refine-collapsed-summary {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: #e8f1ff;
+  font-size: 0.95em;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0;
+  max-width: 0;
+  transform: translateX(-4px);
+  pointer-events: none;
+  transition:
+    opacity 0.22s linear,
+    max-width 0.22s linear,
+    transform 0.22s linear;
+}
+
+.price-refine-collapsed-summary.is-visible {
+  opacity: 1;
+  max-width: 28rem;
+  transform: translateX(0);
+}
+
+.price-refine-chevron {
+  margin-left: auto;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--text-tertiary);
+  border-bottom: 2px solid var(--text-tertiary);
+  transform: rotate(45deg);
+  transition: transform 0.22s linear, margin-top 0.22s linear;
+  flex-shrink: 0;
+}
+
+.price-refine-chevron.is-open {
+  transform: rotate(225deg);
+  margin-top: 3px;
+}
+
+.price-refine-panel {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.22s linear;
+}
+
+.price-refine-bar.is-collapsed .price-refine-panel {
+  grid-template-rows: 0fr;
+}
+
+.price-refine-panel-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.price-refine-body {
+  display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 14px 20px;
-  margin: 0 0 20px;
-  padding: 14px 18px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
+  padding-top: 12px;
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 0.22s linear,
+    transform 0.22s linear,
+    padding-top 0.22s linear;
+}
+
+.price-refine-bar.is-collapsed .price-refine-body {
+  opacity: 0;
+  transform: translateY(-6px);
+  padding-top: 0;
+  pointer-events: none;
 }
 
 .price-refine-copy {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   min-width: 0;
-}
-
-.price-refine-label {
-  font-size: 0.85em;
-  color: var(--text-tertiary);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  flex: 1 1 240px;
 }
 
 .price-refine-applied {
   font-size: 1.05em;
   color: var(--text-primary);
   font-weight: 600;
+}
+
+.price-refine-bar.is-suggested .price-refine-applied {
+  font-size: clamp(1.25em, 2.5vw, 1.55em);
+  color: #e8f1ff;
+  letter-spacing: -0.02em;
+}
+
+.price-refine-suggestion {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.price-refine-suggestion-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+.price-refine-density {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 100, 210, 0.45);
+  background: rgba(0, 100, 210, 0.22);
+  color: #cfe3ff;
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.price-refine-note {
+  margin: 0;
+  font-size: 0.82em;
+  font-weight: 400;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  max-width: 34rem;
+}
+
+.price-refine-hint {
+  font-size: 0.92em;
+  color: var(--text-tertiary);
+  line-height: 1.35;
 }
 
 .price-refine-form {
@@ -68,6 +251,11 @@
   outline: none;
 }
 
+.price-refine-bar.is-suggested .price-refine-form input[type='number'] {
+  border-color: rgba(0, 100, 210, 0.4);
+  background: rgba(15, 15, 15, 0.7);
+}
+
 .price-refine-form input[type='number']:focus {
   border-color: var(--accent-blue);
 }
@@ -87,6 +275,13 @@
 .price-refine-apply {
   background: #0064d2;
   color: #fff;
+}
+
+.price-refine-apply.is-emphasis:not(:disabled) {
+  min-width: 104px;
+  height: 44px;
+  font-size: 15px;
+  background: #1a7aef;
 }
 
 .price-refine-apply:hover:not(:disabled) {
@@ -198,7 +393,7 @@
 
 .chart-filter-message {
   margin-top: 12px;
-  padding: 10px 14px;
+  padding: 10px 12px 10px 14px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
   border-radius: 8px;
@@ -206,22 +401,36 @@
   font-size: 0.9em;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
 }
 
+.chart-filter-message p {
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  line-height: 1.4;
+}
+
 .clear-highlight-btn {
-  background: transparent;
-  border: 1px solid var(--border-color);
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color-light);
   color: var(--text-primary);
-  border-radius: 6px;
-  padding: 4px 10px;
+  border-radius: 8px;
+  padding: 0;
   cursor: pointer;
-  font-family: inherit;
-  font-size: 0.85em;
 }
 
 .clear-highlight-btn:hover {
-  background: var(--border-color);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--text-tertiary);
+  color: #fff;
 }
 
 .results-card {

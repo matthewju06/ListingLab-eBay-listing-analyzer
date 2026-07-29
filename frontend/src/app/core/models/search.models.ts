@@ -23,6 +23,10 @@ export interface SearchResponse {
   itemSummaries: ItemSummary[];
   appliedMinPrice?: number | null;
   appliedMaxPrice?: number | null;
+  suggestedMinPrice?: number | null;
+  suggestedMaxPrice?: number | null;
+  /** Fraction of listings in the suggested cluster, 0–1. */
+  suggestedCoverage?: number | null;
 }
 
 /** @deprecated Prefer auto vs refined via presence of maxPrice */

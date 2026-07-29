@@ -17,42 +17,105 @@
   }
 
   @if (hasResults && metrics) {
-    <div class="price-refine-bar">
-      <div class="price-refine-copy">
-        <span class="price-refine-label">{{ isRefined ? 'Price range' : 'Auto price band' }}</span>
-        @if (appliedMinPrice != null && appliedMaxPrice != null) {
-          <span class="price-refine-applied">
-            ${{ appliedMinPrice | number: '1.0-2' }} – ${{ appliedMaxPrice | number: '1.0-2' }}
+    <div
+      class="price-refine-bar"
+      [class.is-suggested]="!isRefined && hasSuggestion"
+      [class.is-refined]="isRefined"
+      [class.is-collapsed]="!priceRefineExpanded()"
+    >
+      <div class="price-refine-top">
+        <button
+          type="button"
+          class="price-refine-top-btn"
+          (click)="togglePriceRefine()"
+          [attr.aria-expanded]="priceRefineExpanded()"
+          [attr.aria-label]="priceRefineExpanded() ? 'Collapse price range' : 'Expand price range'"
+        >
+          <span class="price-refine-title">
+            {{ isRefined ? 'Active price range' : hasSuggestion ? 'Suggested cluster' : 'Price range' }}
           </span>
-        }
+          <span class="price-refine-collapsed-summary mono" [class.is-visible]="!priceRefineExpanded()">
+            @if (isRefined && appliedMinPrice != null && appliedMaxPrice != null) {
+              ${{ appliedMinPrice | number: '1.0-2' }} – ${{ appliedMaxPrice | number: '1.0-2' }}
+            } @else if (!isRefined && hasSuggestion) {
+              ~${{ suggestedMinPrice! | number: '1.0-2' }} – ${{ suggestedMaxPrice! | number: '1.0-2' }}
+              @if (suggestedCoveragePercent != null) {
+                · {{ suggestedCoveragePercent }}% density
+              }
+            }
+          </span>
+          <span class="price-refine-chevron" [class.is-open]="priceRefineExpanded()" aria-hidden="true"></span>
+        </button>
       </div>
-      <form class="price-refine-form" (submit)="$event.preventDefault(); applyPriceRefine()">
-        <input
-          type="number"
-          name="refineMin"
-          [(ngModel)]="refineMinPrice"
-          placeholder="Min ($)"
-          min="0"
-          step="0.01"
-          aria-label="Minimum price"
-        />
-        <span class="price-range-separator">–</span>
-        <input
-          type="number"
-          name="refineMax"
-          [(ngModel)]="refineMaxPrice"
-          placeholder="Max ($)"
-          min="0"
-          step="0.01"
-          aria-label="Maximum price"
-        />
-        <button type="submit" class="price-refine-apply unselectable-text" [disabled]="loading">Apply</button>
-        @if (isRefined) {
-          <button type="button" class="price-refine-reset unselectable-text" [disabled]="loading" (click)="resetToAuto()">
-            Reset to Auto
-          </button>
-        }
-      </form>
+
+      <div class="price-refine-panel" [attr.aria-hidden]="!priceRefineExpanded()">
+        <div class="price-refine-panel-inner">
+          <div class="price-refine-body">
+            <div class="price-refine-copy">
+              @if (isRefined && appliedMinPrice != null && appliedMaxPrice != null) {
+                <span class="price-refine-applied mono">
+                  ${{ appliedMinPrice | number: '1.0-2' }} – ${{ appliedMaxPrice | number: '1.0-2' }}
+                </span>
+              } @else if (!isRefined && hasSuggestion) {
+                <div class="price-refine-suggestion">
+                  <div class="price-refine-suggestion-main">
+                    <span class="price-refine-applied mono">
+                      ~${{ suggestedMinPrice! | number: '1.0-2' }} – ${{ suggestedMaxPrice! | number: '1.0-2' }}
+                    </span>
+                    @if (suggestedCoveragePercent != null) {
+                      <span class="price-refine-density">{{ suggestedCoveragePercent }}% density</span>
+                    }
+                  </div>
+                  <p class="price-refine-note">
+                    % is cluster density (tightest populous band), not raw listing volume. Apply to re-query eBay in this band.
+                  </p>
+                </div>
+              } @else {
+                <span class="price-refine-hint">Set a min/max and Apply to re-query eBay in that band</span>
+              }
+            </div>
+            <form class="price-refine-form" (submit)="$event.preventDefault(); applyPriceRefine()">
+              <input
+                type="number"
+                name="refineMin"
+                [(ngModel)]="refineMinPrice"
+                placeholder="Min ($)"
+                min="0"
+                step="0.01"
+                aria-label="Minimum price"
+                [disabled]="!priceRefineExpanded()"
+              />
+              <span class="price-range-separator">–</span>
+              <input
+                type="number"
+                name="refineMax"
+                [(ngModel)]="refineMaxPrice"
+                placeholder="Max ($)"
+                min="0"
+                step="0.01"
+                aria-label="Maximum price"
+                [disabled]="!priceRefineExpanded()"
+              />
+              <button
+                type="submit"
+                class="price-refine-apply unselectable-text"
+                [class.is-emphasis]="!isRefined && hasSuggestion"
+                [disabled]="loading || !priceRefineExpanded()"
+              >
+                Apply
+              </button>
+              <button
+                type="button"
+                class="price-refine-reset unselectable-text"
+                [disabled]="loading || !isRefined || !priceRefineExpanded()"
+                (click)="resetToAuto()"
+              >
+                Reset to Auto
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="dashboard-section">
@@ -145,10 +208,21 @@
         </div>
       </div>
       @if (filterMessage) {
-        <p class="chart-filter-message">
-          {{ filterMessage }}
-          <button type="button" class="clear-highlight-btn" (click)="clearHighlight()">Clear</button>
-        </p>
+        <div class="chart-filter-message" role="status">
+          <p>{{ filterMessage }}</p>
+          <button
+            type="button"
+            class="clear-highlight-btn"
+            (click)="clearHighlight()"
+            aria-label="Dismiss message"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
       }
     </div>
 

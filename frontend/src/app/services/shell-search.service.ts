@@ -60,10 +60,16 @@ export class ShellSearchService {
     const maxPrice = options?.maxPrice ?? '';
     const queryParams = this.buildQueryParams(q, minPrice, maxPrice);
     const target = this.router.createUrlTree(['/search'], { queryParams });
-    const sameUrl = this.router.isActive(target, EXACT_URL_MATCH);
+    const targetUrl = this.router.serializeUrl(target);
+    const currentUrl = this.router.url;
+    const sameUrl =
+      this.router.isActive(target, EXACT_URL_MATCH) ||
+      this.stripUrlNoise(currentUrl) === this.stripUrlNoise(targetUrl);
 
-    void this.router.navigateByUrl(target, { replaceUrl: options?.replaceUrl ?? false }).then(() => {
-      if (sameUrl) {
+    void this.router.navigateByUrl(target, { replaceUrl: options?.replaceUrl ?? false }).then((navigated) => {
+      // queryParamMap may not re-emit on same URL (even with onSameUrlNavigation),
+      // and navigate can return false when the router skips — always force then.
+      if (sameUrl || navigated === false) {
         this.forceSearchSubject.next();
       }
     });
@@ -132,5 +138,10 @@ export class ShellSearchService {
     if (params['q'] != null) {
       this.query = String(params['q']);
     }
+  }
+
+  private stripUrlNoise(url: string): string {
+    // Ignore leading slash differences / matrix noise for same-URL detection.
+    return url.replace(/^\//, '').replace(/;[^/]+/g, '');
   }
 }

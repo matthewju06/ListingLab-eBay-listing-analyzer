@@ -37,6 +37,9 @@ def search(
             itemSummaries=result.items,
             appliedMinPrice=result.applied_min_price,
             appliedMaxPrice=result.applied_max_price,
+            suggestedMinPrice=result.suggested_min_price,
+            suggestedMaxPrice=result.suggested_max_price,
+            suggestedCoverage=result.suggested_coverage,
         )
     except Exception as exc:
         logger.exception("Search failed for query=%r", cleaned)

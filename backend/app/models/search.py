@@ -32,3 +32,6 @@ class SearchResponse(BaseModel):
     item_summaries: list[ItemSummary] = Field(alias="itemSummaries")
     applied_min_price: float | None = Field(default=None, alias="appliedMinPrice")
     applied_max_price: float | None = Field(default=None, alias="appliedMaxPrice")
+    suggested_min_price: float | None = Field(default=None, alias="suggestedMinPrice")
+    suggested_max_price: float | None = Field(default=None, alias="suggestedMaxPrice")
+    suggested_coverage: float | None = Field(default=None, alias="suggestedCoverage")

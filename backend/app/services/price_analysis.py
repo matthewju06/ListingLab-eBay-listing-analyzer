@@ -1,7 +1,6 @@
 import logging
 import math
 import statistics
-from concurrent.futures import ThreadPoolExecutor
 
 logger = logging.getLogger(__name__)
 
@@ -95,21 +94,32 @@ def pick_best_segment(prices: list[float], segments: list[tuple[int, int]]) -> t
 
 
 def compute_price_range(prices: list[float], alpha: float) -> tuple[float, float]:
+    """Legacy helper: always returns a band (used by older auto-clamp path)."""
+    suggestion = suggest_price_cluster(prices, alpha)
+    if suggestion is None:
+        return (0.0, 0.0)
+    return suggestion[0], suggestion[1]
+
+
+def suggest_price_cluster(
+    prices: list[float],
+    alpha: float,
+) -> tuple[float, float, float] | None:
+    """Return the densest log-gap cluster as a padded band plus coverage share.
+
+    Returns ``(lo, hi, coverage)`` where ``coverage`` is in ``[0, 1]`` (fraction of
+    listings in the chosen cluster). Returns None when there aren't enough prices.
+    """
     prices = sorted(p for p in prices if p > 0)
     n = len(prices)
     if n < 5:
-        return (0.0, 0.0)
+        return None
 
     segments = find_segments(prices, alpha)
     s, e = pick_best_segment(prices, segments)
-
     coverage = (e - s + 1) / n
-    if coverage < 0.65:
-        lo = prices[int(0.2 * (n - 1))]
-        hi = prices[int(0.8 * (n - 1))]
-    else:
-        lo, hi = prices[s], prices[e]
 
+    lo, hi = prices[s], prices[e]
     width = hi - lo
     pad = max(3.0, 0.1 * width)
-    return max(0.0, lo - pad), hi + pad
+    return max(0.0, lo - pad), hi + pad, coverage

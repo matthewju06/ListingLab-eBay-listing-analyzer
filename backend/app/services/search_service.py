@@ -1,5 +1,4 @@
 import logging
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 
 from app.clients.ebay_client import EbayClient
@@ -7,8 +6,8 @@ from app.models.search import ItemSummary
 from app.services.price_analysis import (
     EXCLUDE_KEYWORDS,
     apply_iqr,
-    compute_price_range,
     extract_prices,
+    suggest_price_cluster,
 )
 
 logger = logging.getLogger(__name__)
@@ -19,6 +18,9 @@ class SearchResult:
     items: list[ItemSummary]
     applied_min_price: float | None
     applied_max_price: float | None
+    suggested_min_price: float | None = None
+    suggested_max_price: float | None = None
+    suggested_coverage: float | None = None
 
 
 class SearchService:
@@ -34,22 +36,13 @@ class SearchService:
         condition: str | None,
         filter_strength: int,
     ) -> SearchResult:
-        if min_price == "":
-            min_price = "0"
-
+        refined = max_price not in ("", None)
         applied_min: float | None = None
         applied_max: float | None = None
 
-        if max_price == "":
-            sample = self._get_listings(query, min_price, max_price, category, condition, limit=100)
-            logger.info("Auto price range: sampled %d items", len(sample))
-            sample = apply_iqr(sample)
-            prices = extract_prices(sample)
-            lo, hi = compute_price_range(prices, filter_strength)
-            logger.info("Computed price range: (%s, %s)", lo, hi)
-            applied_min, applied_max = lo, hi
-            min_price, max_price = str(lo), str(hi)
-        else:
+        if refined:
+            if min_price == "":
+                min_price = "0"
             try:
                 applied_min = float(min_price) if min_price not in ("", None) else 0.0
             except ValueError:
@@ -58,28 +51,54 @@ class SearchService:
                 applied_max = float(max_price)
             except ValueError:
                 applied_max = None
+                refined = False
+                min_price, max_price = "", ""
+        else:
+            # Open search: Best Match, no price clamp.
+            min_price, max_price = "", ""
 
-        # Fetch two pages for volume. eBay Browse offsets can overlap without a
-        # stable sort, so always dedupe before returning.
         page_size = 200
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            pages_results = list(
-                executor.map(
-                    lambda p: self._get_listings(
-                        query, min_price, max_price, category, condition, page=p, limit=page_size
-                    ),
-                    [1, 2],
+        page1 = self._get_listings(
+            query, min_price, max_price, category, condition, page=1, limit=page_size
+        )
+        pages: list[list[dict]] = [page1]
+        if len(page1) >= page_size:
+            pages.append(
+                self._get_listings(
+                    query, min_price, max_price, category, condition, page=2, limit=page_size
                 )
             )
 
         final_items = self._dedupe_listings(
-            [item for page_items in pages_results if page_items for item in page_items]
+            [item for page_items in pages if page_items for item in page_items]
         )
+        items = self._filter_by_quality(final_items)
+
+        suggested_min: float | None = None
+        suggested_max: float | None = None
+        suggested_coverage: float | None = None
+        if not refined:
+            sample = apply_iqr([{"price": item.price} for item in items])
+            prices = extract_prices(sample)
+            suggestion = suggest_price_cluster(prices, filter_strength)
+            if suggestion is not None:
+                suggested_min, suggested_max, suggested_coverage = suggestion
+                logger.info(
+                    "Suggested price cluster for %r: (%s, %s) coverage=%.0f%% from %d prices",
+                    query,
+                    suggested_min,
+                    suggested_max,
+                    suggested_coverage * 100,
+                    len(prices),
+                )
 
         return SearchResult(
-            items=self._filter_by_quality(final_items),
+            items=items,
             applied_min_price=applied_min,
             applied_max_price=applied_max,
+            suggested_min_price=suggested_min,
+            suggested_max_price=suggested_max,
+            suggested_coverage=suggested_coverage,
         )
 
     def _get_listings(
@@ -106,22 +125,26 @@ class SearchService:
         page: int,
         limit: int,
     ) -> dict[str, str]:
-        filter_str = f"price:[{min_price}..{max_price}],priceCurrency:USD"
+        filter_parts: list[str] = []
+
+        # Only clamp price when the user explicitly refined.
+        if max_price not in ("", None):
+            filter_parts.append(f"price:[{min_price or '0'}..{max_price}]")
+            filter_parts.append("priceCurrency:USD")
 
         if condition == "new":
-            filter_str += ",conditionIds:{1000|1500}"
+            filter_parts.append("conditionIds:{1000|1500}")
         elif condition == "used":
-            filter_str += ",conditionIds:{2750|2990|3000|4000|5000|6000}"
+            filter_parts.append("conditionIds:{2750|2990|3000|4000|5000|6000}")
 
         params: dict[str, str] = {
             "q": str(query),
             "auto_correct": "KEYWORD",
-            "filter": filter_str,
             "limit": str(limit),
             "offset": str(limit * (page - 1)),
-            # Stable ordering reduces offset-page overlap from concurrent fetches.
-            "sort": "price",
         }
+        if filter_parts:
+            params["filter"] = ",".join(filter_parts)
 
         if category:
             params["category_ids"] = category
@@ -162,7 +185,6 @@ class SearchService:
             if not key or key in seen:
                 continue
             seen.add(key)
-            # itemId is only used for dedupe; strip before ItemSummary validation
             cleaned = {k: v for k, v in item.items() if k != "itemId"}
             unique.append(cleaned)
         return unique
