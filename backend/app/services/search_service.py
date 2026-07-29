@@ -59,18 +59,22 @@ class SearchService:
             except ValueError:
                 applied_max = None
 
-        final_items: list[dict] = []
-        with ThreadPoolExecutor(max_workers=5) as executor:
+        # Fetch two pages for volume. eBay Browse offsets can overlap without a
+        # stable sort, so always dedupe before returning.
+        page_size = 200
+        with ThreadPoolExecutor(max_workers=2) as executor:
             pages_results = list(
                 executor.map(
-                    lambda p: self._get_listings(query, min_price, max_price, category, condition, page=p),
+                    lambda p: self._get_listings(
+                        query, min_price, max_price, category, condition, page=p, limit=page_size
+                    ),
                     [1, 2],
                 )
             )
 
-        for page_items in pages_results:
-            if page_items:
-                final_items.extend(page_items)
+        final_items = self._dedupe_listings(
+            [item for page_items in pages_results if page_items for item in page_items]
+        )
 
         return SearchResult(
             items=self._filter_by_quality(final_items),
@@ -114,7 +118,9 @@ class SearchService:
             "auto_correct": "KEYWORD",
             "filter": filter_str,
             "limit": str(limit),
-            "offset": str(200 * (page - 1)),
+            "offset": str(limit * (page - 1)),
+            # Stable ordering reduces offset-page overlap from concurrent fetches.
+            "sort": "price",
         }
 
         if category:
@@ -129,6 +135,7 @@ class SearchService:
             categories = item.get("categories") or []
             formatted.append(
                 {
+                    "itemId": item.get("itemId"),
                     "title": item.get("title"),
                     "price": item.get("price", {}).get("value", "0"),
                     "condition": item.get("condition"),
@@ -141,6 +148,24 @@ class SearchService:
                 }
             )
         return formatted
+
+    @staticmethod
+    def _dedupe_listings(items: list[dict]) -> list[dict]:
+        seen: set[str] = set()
+        unique: list[dict] = []
+        for item in items:
+            key = (
+                item.get("itemId")
+                or item.get("itemWebUrl")
+                or f"{item.get('title')}|{item.get('price')}|{item.get('username')}"
+            )
+            if not key or key in seen:
+                continue
+            seen.add(key)
+            # itemId is only used for dedupe; strip before ItemSummary validation
+            cleaned = {k: v for k, v in item.items() if k != "itemId"}
+            unique.append(cleaned)
+        return unique
 
     @staticmethod
     def _filter_by_quality(items: list[dict]) -> list[ItemSummary]:
