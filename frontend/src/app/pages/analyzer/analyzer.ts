@@ -37,13 +37,32 @@ interface ChartClickData {
   title?: string;
   binMin?: number;
   binMax?: number;
-  name?: string;
+}
+
+type ConditionKey = 'New' | 'Used' | 'Other';
+
+interface ConditionSlice {
+  key: ConditionKey;
+  label: string;
+  count: number;
+  percent: number;
+}
+
+function conditionKey(condition: string): ConditionKey {
+  const cond = (condition || '').toUpperCase();
+  if (cond.includes('NEW')) return 'New';
+  if (cond.includes('USED') || cond.includes('PRE-OWNED')) return 'Used';
+  return 'Other';
 }
 
 export interface ListingRow {
   rowIndex: number;
   title: string;
+  /** Delivered total (item + shipping). */
   price: number;
+  itemPrice: number;
+  shippingCost: number;
+  shippingEstimated: boolean;
   condition: string;
   itemWebUrl: string | null;
   username: string;
@@ -53,7 +72,8 @@ export interface ListingRow {
 }
 
 const PLACEHOLDER_IMAGE = 'https://img.icons8.com/office40/512/cancel-2.png';
-const DEFAULT_STRENGTH = 4;
+// A higher gap threshold keeps nearby price groups in the suggested band.
+const DEFAULT_STRENGTH = 6;
 
 @Component({
   selector: 'app-analyzer',
@@ -96,11 +116,25 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
   suggestedMinPrice: number | null = null;
   suggestedMaxPrice: number | null = null;
   suggestedCoverage: number | null = null;
-  /** Price bar starts open; user can collapse to a one-line summary. */
-  readonly priceRefineExpanded = signal(true);
+  /** Only opens when there is a decision to make — a suggested band waiting on Apply. */
+  readonly priceRefineExpanded = signal(false);
+  /** Manual min/max inputs — hidden until user chooses custom or clicks a histogram bar. */
+  readonly showCustomRange = signal(false);
 
   togglePriceRefine(): void {
     this.priceRefineExpanded.update((open) => !open);
+  }
+
+  openCustomRange(): void {
+    this.showCustomRange.set(true);
+    this.priceRefineExpanded.set(true);
+  }
+
+  applySuggestedBand(): void {
+    if (!this.hasSuggestion) return;
+    this.refineMinPrice = String(Math.round(this.suggestedMinPrice! * 100) / 100);
+    this.refineMaxPrice = String(Math.round(this.suggestedMaxPrice! * 100) / 100);
+    this.applyPriceRefine();
   }
 
   items: ItemSummary[] = [];
@@ -123,9 +157,11 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
   mobileFilterMax = '';
 
   histogramOptions: EChartsCoreOption = {};
-  donutOptions: EChartsCoreOption = {};
   sellerScatterOptions: EChartsCoreOption = {};
   dateScatterOptions: EChartsCoreOption = {};
+
+  /** The two scatters share one panel; only the active one is mounted. */
+  readonly scatterTab = signal<'seller' | 'date'>('seller');
 
   readonly gridContext = {
     openListingPreview: (row: ListingRow) => this.openListingPreview(row),
@@ -229,7 +265,7 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
       minWidth: 220,
     },
     {
-      headerName: 'Price',
+      headerName: 'Total',
       field: 'price',
       width: 130,
       filter: 'agNumberColumnFilter',
@@ -284,6 +320,71 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
   get suggestedCoveragePercent(): number | null {
     if (this.suggestedCoverage == null) return null;
     return Math.round(this.suggestedCoverage * 100);
+  }
+
+  /** Inputs already match the band in the URL — re-applying would repeat the same query. */
+  get isRefineUnchanged(): boolean {
+    if (!this.isRefined) return false;
+    const max = Number(String(this.refineMaxPrice ?? '').trim());
+    const min = Number(String(this.refineMinPrice ?? '').trim() || '0');
+    if (!Number.isFinite(min) || !Number.isFinite(max)) return false;
+    return min === Number(this.minPrice || '0') && max === Number(this.maxPrice);
+  }
+
+  get hasStrongPriceSkew(): boolean {
+    return this.metrics != null && Math.abs(this.metrics.skewness) >= 1;
+  }
+
+  get priceSkewMessage(): string {
+    if (!this.metrics) return '';
+    return this.metrics.skewness > 0
+      ? 'High-price outliers are pulling the average up. Prefer the median.'
+      : 'Low-price outliers are pulling the average down. Prefer the median.';
+  }
+
+  get priceSkewShortMessage(): string {
+    if (!this.metrics) return '';
+    return this.metrics.skewness > 0
+      ? 'Outliers pull this up — prefer median'
+      : 'Outliers pull this down — prefer median';
+  }
+
+  get conditionMix(): ConditionSlice[] {
+    const counts: Record<ConditionKey, number> = { New: 0, Used: 0, Other: 0 };
+    this.rowData.forEach((row) => counts[conditionKey(row.condition)]++);
+    const total = this.rowData.length || 1;
+    return (['New', 'Used', 'Other'] as ConditionKey[]).map((key) => ({
+      key,
+      label: key,
+      count: counts[key],
+      percent: (counts[key] / total) * 100,
+    }));
+  }
+
+  get conditionSummaryLabel(): string {
+    return this.conditionMix
+      .map((slice) => `${slice.label} ${Math.round(slice.percent)}%`)
+      .join(', ');
+  }
+
+  get scatterSubtitle(): string {
+    return this.scatterTab() === 'seller'
+      ? 'Total price vs seller feedback score — click a point to preview'
+      : 'Total price by listing date — click a point to preview';
+  }
+
+  setScatterTab(tab: 'seller' | 'date'): void {
+    if (this.scatterTab() === tab) return;
+    this.scatterTab.set(tab);
+    // The panel remounts the chart; nudge ECharts once the new canvas has its box.
+    requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
+  }
+
+  metricRangePosition(value: number): number {
+    if (!this.metrics) return 0;
+    const width = this.metrics.p90 - this.metrics.p10;
+    if (width <= 0) return 50;
+    return Math.max(0, Math.min(100, ((value - this.metrics.p10) / width) * 100));
   }
 
   get mobileSortedRows(): ListingRow[] {
@@ -475,6 +576,8 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
       this.error = 'Please enter a valid price range.';
       return;
     }
+    // Enter key can reach this even while the button is disabled.
+    if (this.isRefineUnchanged) return;
     this.error = '';
     this.shellSearch.query = this.query;
     this.shellSearch.category = this.category;
@@ -516,39 +619,25 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
       const hi = Math.ceil(data.binMax);
       this.refineMinPrice = String(lo);
       this.refineMaxPrice = String(hi);
+      this.openCustomRange();
 
       const matches = this.rowData.filter(
         (row) => row.price >= data.binMin! && row.price < data.binMax!,
       );
 
-      if (matches.length) {
-        this.highlightRow(matches[0].rowIndex);
-        this.filterMessage = `${matches.length} listing(s) in $${lo}–$${hi} — adjust band filled; click Apply to re-fetch`;
-      } else {
-        this.filterMessage = `Price band set to $${lo}–$${hi} — click Apply to re-fetch`;
-      }
+      this.filterMessage = matches.length
+        ? `${matches.length} listing(s) in $${lo}–$${hi} — custom band filled; click Apply to re-query`
+        : `Price band set to $${lo}–$${hi} — click Apply to re-query`;
       this.cdr.detectChanges();
     });
   }
 
-  onDonutClick(event: ECElementEvent): void {
-    this.ngZone.run(() => {
-      const name = (event.data as ChartClickData | undefined)?.name;
-      if (!name) return;
+  jumpToCondition(key: ConditionKey): void {
+    const match = this.rowData.findIndex((row) => conditionKey(row.condition) === key);
+    if (match < 0) return;
 
-      const match = this.rowData.findIndex((row) => {
-        const cond = (row.condition || '').toUpperCase();
-        if (name === 'New') return cond.includes('NEW');
-        if (name === 'Used') return cond.includes('USED') || cond.includes('PRE-OWNED');
-        return !cond.includes('NEW') && !cond.includes('USED') && !cond.includes('PRE-OWNED');
-      });
-
-      if (match >= 0) {
-        this.highlightRow(match);
-        this.filterMessage = `Showing first ${name} listing — click other segments to jump`;
-        this.cdr.detectChanges();
-      }
-    });
+    this.highlightRow(match);
+    this.filterMessage = `Showing first ${key} listing — click another segment to jump`;
   }
 
   clearHighlight(): void {
@@ -560,11 +649,19 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
 
   private toListingRow(item: ItemSummary, index: number): ListingRow {
     const price = parseFloat(item.price);
+    const itemPrice = parseFloat(item.itemPrice ?? item.price);
+    const shipping =
+      item.shippingCost != null && !Number.isNaN(Number(item.shippingCost))
+        ? Number(item.shippingCost)
+        : Math.max(0, (isNaN(price) ? 0 : price) - (isNaN(itemPrice) ? 0 : itemPrice));
     const feedback = item.feedbackPercentage != null ? parseFloat(item.feedbackPercentage) : NaN;
     return {
       rowIndex: index,
       title: item.title || 'N/A',
       price: isNaN(price) ? 0 : price,
+      itemPrice: isNaN(itemPrice) ? 0 : itemPrice,
+      shippingCost: shipping,
+      shippingEstimated: !!item.shippingEstimated,
       condition: item.condition || 'N/A',
       itemWebUrl: item.itemWebUrl,
       username: item.username || 'N/A',
@@ -576,7 +673,6 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
 
   private buildCharts(): void {
     this.histogramOptions = this.chartService.buildHistogramOptions(this.items).options;
-    this.donutOptions = this.chartService.buildDonutOptions(this.items);
     this.sellerScatterOptions = this.chartService.buildSellerScatterOptions(this.items);
     this.dateScatterOptions = this.chartService.buildDateScatterOptions(this.items);
   }
@@ -664,7 +760,7 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
     this.clampWindowScrollToContent();
   }
 
-  private highlightRow(index: number): void {
+  private highlightRow(index: number, options?: { scroll?: boolean }): void {
     this.highlightedRow = index;
     if (this.expandedChart()) {
       this.expandedChart.set(null);
@@ -672,13 +768,15 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
     }
     this.cdr.detectChanges();
 
+    const shouldScroll = options?.scroll !== false;
+
     requestAnimationFrame(() => {
       if (this.expandedTable()) {
         this.selectRowOnApi(this.expandedGridApi, index);
         return;
       }
 
-      if (this.isMobileUi()) {
+      if (shouldScroll && this.isMobileUi()) {
         const mobileCard = document.querySelector('.mobile-listing-card.highlighted');
         if (mobileCard) {
           mobileCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -686,7 +784,9 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
         }
       }
 
-      document.querySelector('.results-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (shouldScroll) {
+        document.querySelector('.results-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
       this.selectRowOnApi(this.gridApi, index);
     });
   }
@@ -750,6 +850,7 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
     this.suggestedMinPrice = null;
     this.suggestedMaxPrice = null;
     this.suggestedCoverage = null;
+    this.showCustomRange.set(false);
     this.mobileFilterInclude = '';
     this.mobileFilterExclude = '';
     this.mobileFilterMin = '';
@@ -782,19 +883,19 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
           if (refined && this.appliedMinPrice != null && this.appliedMaxPrice != null) {
             this.refineMinPrice = String(Math.round(this.appliedMinPrice * 100) / 100);
             this.refineMaxPrice = String(Math.round(this.appliedMaxPrice * 100) / 100);
+            this.priceRefineExpanded.set(false);
+            this.showCustomRange.set(false);
           } else if (!refined && this.hasSuggestion) {
-            // Prefill only — does not re-query until the user clicks Apply.
             this.refineMinPrice = String(Math.round(this.suggestedMinPrice! * 100) / 100);
             this.refineMaxPrice = String(Math.round(this.suggestedMaxPrice! * 100) / 100);
             this.priceRefineExpanded.set(true);
-            const pct = this.suggestedCoveragePercent;
-            this.filterMessage =
-              pct != null
-                ? `Densest price cluster (~${pct}% density) prefilled — click Apply to re-query eBay in that range`
-                : 'Suggested price cluster prefilled — click Apply to re-query eBay in that range';
+            this.showCustomRange.set(false);
+            this.filterMessage = '';
           } else if (!refined) {
             this.refineMinPrice = '';
             this.refineMaxPrice = '';
+            this.priceRefineExpanded.set(false);
+            this.showCustomRange.set(false);
           }
 
           if (!this.items.length) {

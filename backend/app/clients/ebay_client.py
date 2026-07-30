@@ -1,5 +1,6 @@
 import logging
 import time
+from urllib.parse import quote
 
 import requests
 
@@ -47,9 +48,13 @@ class EbayClient:
 
     def fetch_listings(self, params: dict[str, str]) -> list[dict]:
         token = self._ensure_token()
+        # contextualLocation improves shippingCost accuracy for CALCULATED rates.
+        # Format must be URL-encoded: country=US,zip=60601
+        location = f"country={settings.buyer_country},zip={settings.buyer_postal_code}"
         headers = {
             "Authorization": f"Bearer {token}",
             "X-EBAY-C-MARKETPLACE-ID": "EBAY_US",
+            "X-EBAY-C-ENDUSERCTX": f"contextualLocation={quote(location)}",
         }
         resp = requests.get(SEARCH_URL, headers=headers, params=params, timeout=30)
         resp.raise_for_status()

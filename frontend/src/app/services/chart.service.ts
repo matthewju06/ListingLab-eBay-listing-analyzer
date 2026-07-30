@@ -34,6 +34,22 @@ function conditionBucket(item: ItemSummary): 'New' | 'Used' | 'Other' {
   return 'Other';
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+function tooltipTitle(title: string): string {
+  const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches;
+  const limit = isMobile ? 64 : 120;
+  const clipped = title.length > limit ? `${title.slice(0, limit - 1).trimEnd()}…` : title;
+  return escapeHtml(clipped);
+}
+
 function baseTooltip() {
   return {
     backgroundColor: '#1a1a1a',
@@ -156,41 +172,6 @@ export class ChartService {
     return { options, bins };
   }
 
-  buildDonutOptions(items: ItemSummary[]): EChartsCoreOption {
-    const counts = { New: 0, Used: 0, Other: 0 };
-    items.forEach((item) => {
-      counts[conditionBucket(item)]++;
-    });
-
-    return {
-      ...baseGrid(),
-      tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-      legend: {
-        bottom: 0,
-        left: 'center',
-        width: '90%',
-        itemGap: 10,
-        itemWidth: 10,
-        itemHeight: 10,
-        textStyle: { color: TEXT, fontSize: 11 },
-      },
-      series: [
-        {
-          type: 'pie',
-          radius: ['40%', '62%'],
-          center: ['50%', '44%'],
-          avoidLabelOverlap: true,
-          label: { show: false },
-          data: [
-            { name: 'New', value: counts.New, itemStyle: { color: GREEN } },
-            { name: 'Used', value: counts.Used, itemStyle: { color: ORANGE } },
-            { name: 'Other', value: counts.Other, itemStyle: { color: GRAY } },
-          ],
-        },
-      ],
-    };
-  }
-
   buildSellerScatterOptions(items: ItemSummary[]): EChartsCoreOption {
     const seriesMap: Record<string, ChartPointMeta[]> = { New: [], Used: [], Other: [] };
     const prices: number[] = [];
@@ -215,7 +196,7 @@ export class ChartService {
       seriesMap,
       (p) => [parseFloat(items[p.itemIndex].feedbackPercentage || '0'), p.price],
       (p) =>
-        `${p.title}<br/>$${p.price.toFixed(2)} · ${items[p.itemIndex].feedbackPercentage}% seller`,
+        `${tooltipTitle(p.title)}<br/>$${p.price.toFixed(2)} · ${items[p.itemIndex].feedbackPercentage}% seller`,
       {
         isTime: false,
         xBounds: scoreBounds(scores),
@@ -255,7 +236,7 @@ export class ChartService {
       (p) => [items[p.itemIndex].itemCreationDate!, p.price],
       (p) => {
         const date = new Date(items[p.itemIndex].itemCreationDate!);
-        return `${p.title}<br/>$${p.price.toFixed(2)} · ${date.toLocaleDateString()}`;
+        return `${tooltipTitle(p.title)}<br/>$${p.price.toFixed(2)} · ${date.toLocaleDateString()}`;
       },
       {
         isTime: true,
@@ -287,6 +268,9 @@ export class ChartService {
       tooltip: {
         ...baseTooltip(),
         trigger: 'item',
+        confine: true,
+        extraCssText:
+          'max-width:min(280px, calc(100vw - 24px));white-space:normal;overflow-wrap:anywhere;line-height:1.35;font-size:12px;',
         formatter: (params: unknown) => {
           const p = params as { data: ChartPointMeta & { title: string; price: number } };
           return p?.data ? `${tooltipFn(p.data)}<br/><em>Click to preview listing</em>` : '';

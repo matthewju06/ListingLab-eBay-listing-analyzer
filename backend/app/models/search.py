@@ -9,14 +9,19 @@ class SearchRequest(BaseModel):
     max_price: str = Field(default="", alias="maxPrice")
     category: str | None = None
     condition: str | None = None
-    filter_strength: int = Field(default=4, alias="filterStrength")
+    filter_strength: int = Field(default=6, alias="filterStrength")
 
 
 class ItemSummary(BaseModel):
     model_config = ConfigDict(populate_by_name=True, ser_json_by_alias=True)
 
     title: str | None = None
+    # Delivered total: item + shipping (primary number for comps / charts).
     price: str = "0"
+    item_price: str | None = Field(default=None, alias="itemPrice")
+    shipping_cost: float | None = Field(default=None, alias="shippingCost")
+    # True when shipping was imputed from cohort median (not returned by eBay).
+    shipping_estimated: bool = Field(default=False, alias="shippingEstimated")
     condition: str | None = None
     item_web_url: str | None = Field(default=None, alias="itemWebUrl")
     username: str | None = None

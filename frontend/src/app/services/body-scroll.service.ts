@@ -20,6 +20,10 @@ export class BodyScrollService {
     this.apply();
   }
 
+  get isLocked(): boolean {
+    return this.locks.size > 0;
+  }
+
   private apply(): void {
     document.body.style.overflow = this.locks.size > 0 ? 'hidden' : '';
   }

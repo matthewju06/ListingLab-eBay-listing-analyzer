@@ -15,6 +15,7 @@
   position: sticky;
   top: 0;
   z-index: 300;
+  transition: transform 0.24s ease;
 }
 
 .app-nav-brand {
@@ -246,5 +247,18 @@
   .app-nav-links a {
     padding: 8px 10px;
     font-size: 0.9em;
+  }
+}
+
+/* Mobile: slide the nav out on scroll down, snap it back on scroll up. */
+@media (max-width: 768px) {
+  .app-nav.is-hidden {
+    transform: translateY(-100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-nav {
+    transition: none;
   }
 }

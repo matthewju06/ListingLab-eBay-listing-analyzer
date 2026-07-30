@@ -20,7 +20,7 @@
   align-items: stretch;
   gap: 0;
   margin: 0 0 20px;
-  padding: 14px 16px;
+  padding: 10px 14px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
   border-radius: 12px;
@@ -68,19 +68,22 @@
 .price-refine-title {
   margin: 0;
   flex-shrink: 0;
-  font-size: clamp(1.15em, 2.2vw, 1.4em);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--text-primary);
-  transition: font-size 0.22s linear, color 0.22s linear;
-}
-
-.price-refine-bar.is-collapsed .price-refine-title {
   font-size: 0.85em;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--text-tertiary);
+  transition: color 0.22s linear;
+}
+
+.price-refine-bar.is-suggested:not(.is-collapsed) .price-refine-title,
+.price-refine-bar.is-refined:not(.is-collapsed) .price-refine-title {
+  font-size: 0.95em;
+  font-weight: 700;
+}
+
+.price-refine-bar.is-refined:not(.is-collapsed) .price-refine-title {
+  color: #86efac;
 }
 
 .price-refine-bar.is-suggested .price-refine-title {
@@ -152,8 +155,8 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 14px 20px;
-  padding-top: 12px;
+  gap: 10px 16px;
+  padding-top: 8px;
   opacity: 1;
   transform: translateY(0);
   transition:
@@ -171,10 +174,28 @@
 
 .price-refine-copy {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 6px;
   min-width: 0;
-  flex: 1 1 240px;
+  flex: 1 1 auto;
+}
+
+.price-refine-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Custom-range form drops to its own line under the summary row. */
+.price-refine-body > .price-refine-form,
+.price-refine-form-hint {
+  flex: 1 0 100%;
+}
+
+.price-refine-form-hint {
+  margin: 0;
+  font-size: 0.8em;
 }
 
 .price-refine-applied {
@@ -183,16 +204,15 @@
   font-weight: 600;
 }
 
-.price-refine-bar.is-suggested .price-refine-applied {
-  font-size: clamp(1.25em, 2.5vw, 1.55em);
-  color: #e8f1ff;
-  letter-spacing: -0.02em;
+.price-refine-bar.is-suggested .price-refine-applied,
+.price-refine-bar.is-refined .price-refine-applied {
+  font-size: clamp(1.25em, 2.2vw, 1.5em);
+  font-weight: 700;
+  letter-spacing: -0.025em;
 }
 
-.price-refine-suggestion {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+.price-refine-bar.is-suggested .price-refine-applied {
+  color: #e8f1ff;
 }
 
 .price-refine-suggestion-main {
@@ -331,6 +351,47 @@
 
 .chart-panel-header .chart-subtitle {
   margin-bottom: 16px;
+}
+
+.chart-panel-heading {
+  min-width: 0;
+}
+
+.chart-tabs {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  margin-bottom: 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-tertiary);
+}
+
+.chart-tab {
+  padding: 5px 12px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.88em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.chart-tab:hover:not(.is-active) {
+  color: var(--text-primary);
+}
+
+.chart-tab.is-active {
+  background: rgba(0, 100, 210, 0.9);
+  color: #fff;
+}
+
+.chart-tab:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 1px;
 }
 
 .expand-chart-btn {
@@ -719,6 +780,20 @@
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1.1;
+}
+
+.listing-preview-price-breakdown {
+  margin-top: 4px;
+  font-size: 0.9em;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.shipping-estimated {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.85em;
+  color: var(--text-tertiary);
 }
 
 .listing-preview-condition {

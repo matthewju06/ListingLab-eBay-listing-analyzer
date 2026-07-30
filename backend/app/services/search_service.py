@@ -1,4 +1,5 @@
 import logging
+import statistics
 from dataclasses import dataclass
 
 from app.clients.ebay_client import EbayClient
@@ -72,6 +73,7 @@ class SearchService:
         final_items = self._dedupe_listings(
             [item for page_items in pages if page_items for item in page_items]
         )
+        final_items = self._apply_shipping_totals(final_items)
         items = self._filter_by_quality(final_items)
 
         suggested_min: float | None = None
@@ -128,6 +130,7 @@ class SearchService:
         filter_parts: list[str] = []
 
         # Only clamp price when the user explicitly refined.
+        # Note: eBay's price filter is item price only; our comps use item+shipping.
         if max_price not in ("", None):
             filter_parts.append(f"price:[{min_price or '0'}..{max_price}]")
             filter_parts.append("priceCurrency:USD")
@@ -152,15 +155,39 @@ class SearchService:
         return params
 
     @staticmethod
-    def _format_listings(items: list[dict]) -> list[dict]:
+    def _extract_shipping(item: dict) -> float | None:
+        options = item.get("shippingOptions") or []
+        if not options:
+            return None
+        cost = (options[0] or {}).get("shippingCost") or {}
+        value = cost.get("value")
+        if value is None or value == "":
+            return None
+        try:
+            return max(0.0, float(value))
+        except (TypeError, ValueError):
+            return None
+
+    @classmethod
+    def _format_listings(cls, items: list[dict]) -> list[dict]:
         formatted: list[dict] = []
         for item in items:
             categories = item.get("categories") or []
+            raw_price = item.get("price", {}).get("value", "0")
+            try:
+                item_price = float(raw_price)
+            except (TypeError, ValueError):
+                item_price = 0.0
+            shipping = cls._extract_shipping(item)
             formatted.append(
                 {
                     "itemId": item.get("itemId"),
                     "title": item.get("title"),
-                    "price": item.get("price", {}).get("value", "0"),
+                    "itemPrice": f"{item_price:.2f}",
+                    "shippingCost": shipping,
+                    "shippingEstimated": False,
+                    # Filled in _apply_shipping_totals
+                    "price": f"{item_price:.2f}",
                     "condition": item.get("condition"),
                     "itemWebUrl": item.get("itemWebUrl"),
                     "username": item.get("seller", {}).get("username"),
@@ -171,6 +198,42 @@ class SearchService:
                 }
             )
         return formatted
+
+    @staticmethod
+    def _apply_shipping_totals(items: list[dict]) -> list[dict]:
+        """Set price = item + shipping; impute missing shipping from cohort median."""
+        known = [
+            float(item["shippingCost"])
+            for item in items
+            if item.get("shippingCost") is not None
+        ]
+        median_ship = float(statistics.median(known)) if known else 0.0
+
+        for item in items:
+            try:
+                item_price = float(item.get("itemPrice") or 0)
+            except (TypeError, ValueError):
+                item_price = 0.0
+
+            if item.get("shippingCost") is not None:
+                shipping = float(item["shippingCost"])
+                estimated = False
+            else:
+                shipping = median_ship
+                estimated = True
+
+            item["shippingCost"] = round(shipping, 2)
+            item["shippingEstimated"] = estimated
+            item["price"] = f"{(item_price + shipping):.2f}"
+
+        if known:
+            logger.info(
+                "Shipping totals: %d known, %d imputed (median $%.2f)",
+                len(known),
+                len(items) - len(known),
+                median_ship,
+            )
+        return items
 
     @staticmethod
     def _dedupe_listings(items: list[dict]) -> list[dict]:

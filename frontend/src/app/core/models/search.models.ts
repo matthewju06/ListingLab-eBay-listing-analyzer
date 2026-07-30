@@ -1,6 +1,11 @@
 export interface ItemSummary {
   title: string | null;
+  /** Delivered total: item + shipping (used for comps / charts). */
   price: string;
+  itemPrice?: string | null;
+  shippingCost?: number | null;
+  /** True when shipping was imputed from the result-set median. */
+  shippingEstimated?: boolean;
   condition: string | null;
   itemWebUrl: string | null;
   username: string | null;
@@ -60,4 +65,10 @@ export interface PriceMetrics {
   median: number;
   min: number;
   max: number;
+  q1: number;
+  q3: number;
+  p10: number;
+  p90: number;
+  /** Adjusted Fisher-Pearson sample skewness. */
+  skewness: number;
 }

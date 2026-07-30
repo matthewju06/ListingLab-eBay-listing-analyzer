@@ -12,7 +12,7 @@ export interface ShellSearchState {
   maxPrice: string;
 }
 
-const DEFAULT_STRENGTH = 4;
+const DEFAULT_STRENGTH = 6;
 
 const EXACT_URL_MATCH: IsActiveMatchOptions = {
   paths: 'exact',

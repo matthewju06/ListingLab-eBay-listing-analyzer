@@ -18,7 +18,7 @@ def search(
     max_price: str = Query(default="", alias="maxPrice"),
     category: str | None = Query(default=None),
     condition: str | None = Query(default=None),
-    filter_strength: int = Query(default=4, alias="filterStrength"),
+    filter_strength: int = Query(default=6, alias="filterStrength"),
 ) -> SearchResponse:
     cleaned = query.strip()
     if not cleaned:

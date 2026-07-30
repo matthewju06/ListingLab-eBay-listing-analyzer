@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     database_url: str = ""
     # Temporary until Clerk JWT auth is wired. Frontend/API can send X-User-Id.
     dev_user_id: str = "dev-user"
+    # Default US hub for shipping estimates (Chicago Loop).
+    buyer_country: str = "US"
+    buyer_postal_code: str = "60601"
 
     @field_validator("client_id", "client_secret", "database_url", "dev_user_id", mode="before")
     @classmethod

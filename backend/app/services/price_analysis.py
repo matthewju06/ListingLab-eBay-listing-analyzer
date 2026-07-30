@@ -117,9 +117,14 @@ def suggest_price_cluster(
 
     segments = find_segments(prices, alpha)
     s, e = pick_best_segment(prices, segments)
-    coverage = (e - s + 1) / n
 
     lo, hi = prices[s], prices[e]
     width = hi - lo
-    pad = max(3.0, 0.1 * width)
-    return max(0.0, lo - pad), hi + pad, coverage
+    # Keep the recommendation useful as a search band rather than tracing the
+    # detected cluster too tightly. This is especially important for narrow,
+    # high-density groups where a $3 buffer excluded nearby valid comps.
+    pad = max(5.0, 0.15 * width)
+    padded_lo = max(0.0, lo - pad)
+    padded_hi = hi + pad
+    coverage = sum(padded_lo <= price <= padded_hi for price in prices) / n
+    return padded_lo, padded_hi, coverage

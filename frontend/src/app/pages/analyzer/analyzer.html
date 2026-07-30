@@ -57,153 +57,261 @@
                   ${{ appliedMinPrice | number: '1.0-2' }} – ${{ appliedMaxPrice | number: '1.0-2' }}
                 </span>
               } @else if (!isRefined && hasSuggestion) {
-                <div class="price-refine-suggestion">
-                  <div class="price-refine-suggestion-main">
-                    <span class="price-refine-applied mono">
-                      ~${{ suggestedMinPrice! | number: '1.0-2' }} – ${{ suggestedMaxPrice! | number: '1.0-2' }}
+                <div class="price-refine-suggestion-main">
+                  <span class="price-refine-applied mono">
+                    ~${{ suggestedMinPrice! | number: '1.0-2' }} – ${{ suggestedMaxPrice! | number: '1.0-2' }}
+                  </span>
+                  @if (suggestedCoveragePercent != null) {
+                    <span
+                      class="price-refine-density"
+                      title="Share of listings inside the densest price cluster — not raw listing volume"
+                    >
+                      {{ suggestedCoveragePercent }}% density
                     </span>
-                    @if (suggestedCoveragePercent != null) {
-                      <span class="price-refine-density">{{ suggestedCoveragePercent }}% density</span>
-                    }
-                  </div>
-                  <p class="price-refine-note">
-                    % is cluster density (tightest populous band), not raw listing volume. Apply to re-query eBay in this band.
-                  </p>
+                  }
                 </div>
               } @else {
-                <span class="price-refine-hint">Set a min/max and Apply to re-query eBay in that band</span>
+                <span class="price-refine-hint">
+                  No strong cluster found. Use a custom range or click a histogram bar.
+                </span>
               }
             </div>
-            <form class="price-refine-form" (submit)="$event.preventDefault(); applyPriceRefine()">
-              <input
-                type="number"
-                name="refineMin"
-                [(ngModel)]="refineMinPrice"
-                placeholder="Min ($)"
-                min="0"
-                step="0.01"
-                aria-label="Minimum price"
-                [disabled]="!priceRefineExpanded()"
-              />
-              <span class="price-range-separator">–</span>
-              <input
-                type="number"
-                name="refineMax"
-                [(ngModel)]="refineMaxPrice"
-                placeholder="Max ($)"
-                min="0"
-                step="0.01"
-                aria-label="Maximum price"
-                [disabled]="!priceRefineExpanded()"
-              />
-              <button
-                type="submit"
-                class="price-refine-apply unselectable-text"
-                [class.is-emphasis]="!isRefined && hasSuggestion"
-                [disabled]="loading || !priceRefineExpanded()"
-              >
-                Apply
-              </button>
-              <button
-                type="button"
-                class="price-refine-reset unselectable-text"
-                [disabled]="loading || !isRefined || !priceRefineExpanded()"
-                (click)="resetToAuto()"
-              >
-                Reset to Auto
-              </button>
-            </form>
+
+            <div class="price-refine-actions">
+              @if (!isRefined && hasSuggestion && !showCustomRange()) {
+                <button
+                  type="button"
+                  class="price-refine-apply unselectable-text is-emphasis"
+                  [disabled]="loading"
+                  (click)="applySuggestedBand()"
+                >
+                  Apply suggested
+                </button>
+                <button
+                  type="button"
+                  class="price-refine-reset unselectable-text"
+                  [disabled]="loading"
+                  (click)="openCustomRange()"
+                >
+                  Apply custom price range
+                </button>
+              }
+
+              @if (isRefined && !showCustomRange()) {
+                <button
+                  type="button"
+                  class="price-refine-reset unselectable-text"
+                  [disabled]="loading"
+                  (click)="openCustomRange()"
+                >
+                  Adjust range
+                </button>
+                <button
+                  type="button"
+                  class="price-refine-reset unselectable-text"
+                  [disabled]="loading"
+                  (click)="resetToAuto()"
+                >
+                  Reset to Auto
+                </button>
+              }
+            </div>
+
+            @if (showCustomRange() || (!hasSuggestion && !isRefined)) {
+              <form class="price-refine-form" (submit)="$event.preventDefault(); applyPriceRefine()">
+                <input
+                  type="number"
+                  name="refineMin"
+                  [(ngModel)]="refineMinPrice"
+                  placeholder="Min ($)"
+                  min="0"
+                  step="0.01"
+                  aria-label="Minimum price"
+                  [disabled]="!priceRefineExpanded()"
+                />
+                <span class="price-range-separator">–</span>
+                <input
+                  type="number"
+                  name="refineMax"
+                  [(ngModel)]="refineMaxPrice"
+                  placeholder="Max ($)"
+                  min="0"
+                  step="0.01"
+                  aria-label="Maximum price"
+                  [disabled]="!priceRefineExpanded()"
+                />
+                <button
+                  type="submit"
+                  class="price-refine-apply unselectable-text"
+                  [disabled]="loading || !priceRefineExpanded() || isRefineUnchanged"
+                  [title]="isRefineUnchanged ? 'These results already use this range' : 'Re-query eBay in this range'"
+                >
+                  {{ isRefineUnchanged ? 'Applied' : 'Apply' }}
+                </button>
+                @if (isRefined) {
+                  <button
+                    type="button"
+                    class="price-refine-reset unselectable-text"
+                    [disabled]="loading || !priceRefineExpanded()"
+                    (click)="resetToAuto()"
+                  >
+                    Reset to Auto
+                  </button>
+                }
+              </form>
+              <p class="price-refine-hint price-refine-form-hint">
+                Tip: click a histogram column to fill min/max from that bin.
+              </p>
+            }
           </div>
         </div>
       </div>
     </div>
 
     <div class="dashboard-section">
-      <h2 class="dashboard-title">
-        Overview: <span style="color: #0064D2;">{{ capitalizeWords(query) }}</span>
-      </h2>
-      <div class="dashboard-layout">
-        <div class="left-sidebar">
-          <div class="metric-card">
-            <div class="metric-label">Total Listings</div>
-            <div class="metric-value">{{ metrics.total }}</div>
+      <div class="dashboard-title-wrap">
+        <span class="dashboard-title-ghost" aria-hidden="true">{{ capitalizeWords(query) }}</span>
+        <h2 class="dashboard-title">{{ capitalizeWords(query) }}</h2>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-card">
+          <div class="metric-label">Listings</div>
+          <div class="metric-value">{{ metrics.total }}</div>
+          <div class="metric-caption">in this sample</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="metric-label">Median</div>
+          <div class="metric-value">${{ metrics.median.toFixed(2) }}</div>
+          <div class="metric-caption">typical delivered price</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="metric-label">Average</div>
+          <div class="metric-value metric-value-secondary">${{ metrics.avg.toFixed(2) }}</div>
+          @if (hasStrongPriceSkew) {
+            <div class="metric-skew-note" role="note" [title]="priceSkewMessage">
+              {{ priceSkewShortMessage }}
+            </div>
+          } @else {
+            <div class="metric-caption">mean delivered price</div>
+          }
+        </div>
+
+        <div class="stat-card stat-card-wide">
+          <div class="metric-label">Condition</div>
+          <div class="condition-bar" role="img" [attr.aria-label]="conditionSummaryLabel">
+            @for (slice of conditionMix; track slice.key) {
+              @if (slice.count) {
+                <button
+                  type="button"
+                  class="condition-bar-slice"
+                  [class.is-new]="slice.key === 'New'"
+                  [class.is-used]="slice.key === 'Used'"
+                  [class.is-other]="slice.key === 'Other'"
+                  [style.width.%]="slice.percent"
+                  [title]="slice.label + ': ' + slice.count + ' listings — click to jump to the first one'"
+                  [attr.aria-label]="'Jump to first ' + slice.label + ' listing'"
+                  (click)="jumpToCondition(slice.key)"
+                ></button>
+              }
+            }
           </div>
-          <div class="metric-card">
-            <div class="metric-label">Average Price</div>
-            <div class="metric-value">${{ metrics.avg.toFixed(2) }}</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">Median Price</div>
-            <div class="metric-value">${{ metrics.median.toFixed(2) }}</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">Min Price</div>
-            <div class="metric-value">${{ metrics.min.toFixed(2) }}</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">Max Price</div>
-            <div class="metric-value">${{ metrics.max.toFixed(2) }}</div>
+          <div class="condition-legend">
+            @for (slice of conditionMix; track slice.key) {
+              <span class="condition-legend-item">
+                <i
+                  class="condition-dot"
+                  [class.is-new]="slice.key === 'New'"
+                  [class.is-used]="slice.key === 'Used'"
+                  [class.is-other]="slice.key === 'Other'"
+                ></i>
+                {{ slice.label }} {{ slice.percent.toFixed(0) }}%
+              </span>
+            }
           </div>
         </div>
 
-        <div class="top-row">
-          <div class="chart-panel dot-plot">
-            <h3 class="chart-title"># Listings by Price</h3>
-            <p class="chart-subtitle">Click a bar to fill the price band</p>
-            <div class="chart-placeholder">
-              <div echarts class="echart" [options]="histogramOptions" (chartClick)="onHistogramClick($event)"></div>
+        <div class="stat-card stat-card-wide">
+          <div class="metric-label">Price spread</div>
+          <div class="box-range" aria-label="10th percentile, quartiles, median, and 90th percentile">
+            <div class="box-range-track"></div>
+            <div
+              class="box-range-box"
+              [style.left.%]="metricRangePosition(metrics.q1)"
+              [style.width.%]="metricRangePosition(metrics.q3) - metricRangePosition(metrics.q1)"
+            ></div>
+            <div class="box-range-median" [style.left.%]="metricRangePosition(metrics.median)"></div>
+          </div>
+          <div class="box-range-labels">
+            <span>${{ metrics.p10.toFixed(0) }}</span>
+            <span>Median ${{ metrics.median.toFixed(0) }}</span>
+            <span>${{ metrics.p90.toFixed(0) }}</span>
+          </div>
+          <div class="metric-caption">
+            10th–90th percentile · full range ${{ metrics.min.toFixed(0) }}–${{ metrics.max.toFixed(0) }}
+          </div>
+        </div>
+      </div>
+
+      <div class="analytics-grid">
+        <div class="chart-panel large">
+          <div class="chart-panel-header">
+            <div>
+              <h3 class="chart-title"># Listings by Price</h3>
+              <p class="chart-subtitle">Click a bar to fill a custom price band (no page jump)</p>
             </div>
           </div>
-          <div class="info-card">
-            <h3 class="info-card-title">New vs Used</h3>
-            <div class="info-card-content">
-              <div echarts class="echart" [options]="donutOptions" (chartClick)="onDonutClick($event)"></div>
-            </div>
+          <div class="chart-placeholder">
+            <div echarts class="echart" [options]="histogramOptions" (chartClick)="onHistogramClick($event)"></div>
           </div>
         </div>
 
-        <div class="main-content">
-          <div class="chart-panel large">
-            <div class="chart-panel-header">
-              <div>
-                <h3 class="chart-title">Price vs Seller Score</h3>
-                <p class="chart-subtitle">Click a point to preview listing</p>
+        <div class="chart-panel large">
+          <div class="chart-panel-header">
+            <div class="chart-panel-heading">
+              <div class="chart-tabs" role="tablist" aria-label="Scatter chart view">
+                <button
+                  type="button"
+                  role="tab"
+                  class="chart-tab"
+                  [class.is-active]="scatterTab() === 'seller'"
+                  [attr.aria-selected]="scatterTab() === 'seller'"
+                  (click)="setScatterTab('seller')"
+                >
+                  Seller score
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  class="chart-tab"
+                  [class.is-active]="scatterTab() === 'date'"
+                  [attr.aria-selected]="scatterTab() === 'date'"
+                  (click)="setScatterTab('date')"
+                >
+                  Listing date
+                </button>
               </div>
-              <button type="button" class="expand-chart-btn" aria-label="Expand chart"
-                (click)="openExpandedChart('seller')">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="15 3 21 3 21 9"></polyline>
-                  <polyline points="9 21 3 21 3 15"></polyline>
-                  <line x1="21" y1="3" x2="14" y2="10"></line>
-                  <line x1="3" y1="21" x2="10" y2="14"></line>
-                </svg>
-              </button>
+              <p class="chart-subtitle">{{ scatterSubtitle }}</p>
             </div>
-            <div class="chart-placeholder">
+            <button type="button" class="expand-chart-btn" aria-label="Expand chart"
+              (click)="openExpandedChart(scatterTab())">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <polyline points="9 21 3 21 3 15"></polyline>
+                <line x1="21" y1="3" x2="14" y2="10"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+              </svg>
+            </button>
+          </div>
+          <div class="chart-placeholder">
+            @if (scatterTab() === 'seller') {
               <div echarts class="echart" [options]="sellerScatterOptions" (chartClick)="onScatterClick($event)"></div>
-            </div>
-          </div>
-          <div class="chart-panel large">
-            <div class="chart-panel-header">
-              <div>
-                <h3 class="chart-title">Price by Listing Date</h3>
-                <p class="chart-subtitle">Click a point to preview listing</p>
-              </div>
-              <button type="button" class="expand-chart-btn" aria-label="Expand chart"
-                (click)="openExpandedChart('date')">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="15 3 21 3 21 9"></polyline>
-                  <polyline points="9 21 3 21 3 15"></polyline>
-                  <line x1="21" y1="3" x2="14" y2="10"></line>
-                  <line x1="3" y1="21" x2="10" y2="14"></line>
-                </svg>
-              </button>
-            </div>
-            <div class="chart-placeholder">
+            } @else {
               <div echarts class="echart" [options]="dateScatterOptions" (chartClick)="onScatterClick($event)"></div>
-            </div>
+            }
           </div>
         </div>
       </div>
@@ -336,7 +444,7 @@
               </div>
               <div class="mobile-listing-body">
                 <div class="mobile-listing-title">{{ row.title }}</div>
-                <div class="mobile-listing-price">US ${{ row.price.toFixed(2) }}</div>
+                <div class="mobile-listing-price">US ${{ row.price.toFixed(2) }} total</div>
                 <div class="mobile-listing-meta">
                   <span>{{ row.condition }}</span>
                   <span aria-hidden="true">·</span>
@@ -416,6 +524,13 @@
           </div>
 
           <div class="listing-preview-price">US ${{ previewListing.price.toFixed(2) }}</div>
+          <div class="listing-preview-price-breakdown">
+            ${{ previewListing.itemPrice.toFixed(2) }} item
+            + ${{ previewListing.shippingCost.toFixed(2) }} shipping
+            @if (previewListing.shippingEstimated) {
+              <span class="shipping-estimated">(est. from result-set median · Chicago hub)</span>
+            }
+          </div>
 
           <div class="listing-preview-condition">
             <span class="condition-label">Condition:</span>
