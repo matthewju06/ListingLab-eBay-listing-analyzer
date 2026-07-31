@@ -1,6 +1,7 @@
 import logging
 import statistics
 from dataclasses import dataclass
+import asyncio
 
 from app.clients.ebay_client import EbayClient
 from app.models.search import ItemSummary
@@ -28,7 +29,7 @@ class SearchService:
     def __init__(self, ebay_client: EbayClient | None = None) -> None:
         self._ebay_client = ebay_client or EbayClient()
 
-    def process_search(
+    async def process_search(
         self,
         query: str,
         min_price: str,
@@ -59,16 +60,9 @@ class SearchService:
             min_price, max_price = "", ""
 
         page_size = 200
-        page1 = self._get_listings(
-            query, min_price, max_price, category, condition, page=1, limit=page_size
-        )
-        pages: list[list[dict]] = [page1]
-        if len(page1) >= page_size:
-            pages.append(
-                self._get_listings(
-                    query, min_price, max_price, category, condition, page=2, limit=page_size
-                )
-            )
+        page_tasks = [self._get_listings(query, min_price, max_price, category, condition, page=1, limit=page_size),
+                        self._get_listings(query, min_price, max_price, category, condition, page=2, limit=page_size)]
+        pages: list[list[dict]] = await asyncio.gather(*page_tasks)
 
         final_items = self._dedupe_listings(
             [item for page_items in pages if page_items for item in page_items]
@@ -103,7 +97,7 @@ class SearchService:
             suggested_coverage=suggested_coverage,
         )
 
-    def _get_listings(
+    async def _get_listings(
         self,
         query: str,
         min_price: str,
@@ -114,7 +108,7 @@ class SearchService:
         limit: int = 200,
     ) -> list[dict]:
         params = self._build_search_params(query, min_price, max_price, category, condition, page, limit)
-        raw_items = self._ebay_client.fetch_listings(params)
+        raw_items = await self._ebay_client.fetch_listings(params)
         return self._format_listings(raw_items)
 
     def _build_search_params(

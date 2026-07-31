@@ -2,7 +2,7 @@ import logging
 import time
 from urllib.parse import quote
 
-import requests
+import httpx
 
 from app.config import settings
 
@@ -14,17 +14,19 @@ TOKEN_TTL_SECONDS = 6000
 
 
 class EbayClient:
+    client = httpx.AsyncClient(timeout=30.0)
+
     def __init__(self) -> None:
         self._token: str | None = None
         self._token_time: float | None = None
 
-    def _get_token(self) -> str:
+    async def _get_token(self) -> str:
         settings.require_ebay_credentials()
         body = {
             "grant_type": "client_credentials",
             "scope": "https://api.ebay.com/oauth/api_scope",
         }
-        resp = requests.post(
+        resp = await self.client.post(
             TOKEN_URL,
             data=body,
             auth=(settings.client_id, settings.client_secret),
@@ -39,15 +41,15 @@ class EbayClient:
         resp.raise_for_status()
         return resp.json()["access_token"]
 
-    def _ensure_token(self) -> str:
+    async def _ensure_token(self) -> str:
         if not self._token or not self._token_time or time.perf_counter() - self._token_time > TOKEN_TTL_SECONDS:
             logger.info("Refreshing eBay OAuth token")
-            self._token = self._get_token()
+            self._token = await self._get_token()
             self._token_time = time.perf_counter()
         return self._token
 
-    def fetch_listings(self, params: dict[str, str]) -> list[dict]:
-        token = self._ensure_token()
+    async def fetch_listings(self, params: dict[str, str]) -> list[dict]:
+        token = await self._ensure_token()
         # contextualLocation improves shippingCost accuracy for CALCULATED rates.
         # Format must be URL-encoded: country=US,zip=60601
         location = f"country={settings.buyer_country},zip={settings.buyer_postal_code}"
@@ -56,6 +58,6 @@ class EbayClient:
             "X-EBAY-C-MARKETPLACE-ID": "EBAY_US",
             "X-EBAY-C-ENDUSERCTX": f"contextualLocation={quote(location)}",
         }
-        resp = requests.get(SEARCH_URL, headers=headers, params=params, timeout=30)
+        resp = await self.client.get(SEARCH_URL, headers=headers, params=params, timeout=30)
         resp.raise_for_status()
         return resp.json().get("itemSummaries", [])

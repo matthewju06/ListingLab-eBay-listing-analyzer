@@ -12,7 +12,7 @@ _search_service = SearchService()
 
 
 @router.get("/search", response_model=SearchResponse)
-def search(
+async def search(
     query: str = Query(..., min_length=1, max_length=80),
     min_price: str = Query(default="", alias="minPrice"),
     max_price: str = Query(default="", alias="maxPrice"),
@@ -25,7 +25,7 @@ def search(
         raise HTTPException(status_code=400, detail="Missing query")
 
     try:
-        result = _search_service.process_search(
+        result = await _search_service.process_search(
             query=cleaned,
             min_price=min_price,
             max_price=max_price,
