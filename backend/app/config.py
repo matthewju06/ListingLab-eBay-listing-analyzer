@@ -19,7 +19,29 @@ class Settings(BaseSettings):
     buyer_country: str = "US"
     buyer_postal_code: str = "60601"
 
-    @field_validator("client_id", "client_secret", "database_url", "dev_user_id", mode="before")
+    # Upstash Redis (Vercel Storage / Marketplace). Prefer UPSTASH_*; fall back to KV_*.
+    upstash_redis_rest_url: str = ""
+    upstash_redis_rest_token: str = ""
+    kv_rest_api_url: str = ""
+    kv_rest_api_token: str = ""
+
+    # Shared search response cache TTL.
+    search_cache_ttl_seconds: int = 600
+    # Per-IP search rate limit (fixed window).
+    search_rate_limit: int = 8
+    search_rate_window_seconds: int = 60
+
+    @field_validator(
+        "client_id",
+        "client_secret",
+        "database_url",
+        "dev_user_id",
+        "upstash_redis_rest_url",
+        "upstash_redis_rest_token",
+        "kv_rest_api_url",
+        "kv_rest_api_token",
+        mode="before",
+    )
     @classmethod
     def strip_credential(cls, value: object) -> object:
         if isinstance(value, str):
@@ -29,6 +51,14 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+    @property
+    def redis_rest_url(self) -> str:
+        return self.upstash_redis_rest_url or self.kv_rest_api_url
+
+    @property
+    def redis_rest_token(self) -> str:
+        return self.upstash_redis_rest_token or self.kv_rest_api_token
 
     def require_ebay_credentials(self) -> None:
         if not self.client_id or not self.client_secret:
