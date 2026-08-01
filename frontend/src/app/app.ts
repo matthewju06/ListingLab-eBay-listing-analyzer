@@ -18,6 +18,7 @@ import { HistoryEntry } from './core/models/search.models';
 import { HistoryService } from './services/history.service';
 import { ShellSearchService } from './services/shell-search.service';
 import { BodyScrollService } from './services/body-scroll.service';
+import { ToastService } from './services/toast.service';
 
 /** Keep the nav pinned until the user is meaningfully past the top of the page. */
 const NAV_HIDE_AFTER_PX = 88;
@@ -32,6 +33,7 @@ const NAV_SCROLL_DELTA_PX = 6;
 })
 export class App implements OnInit, AfterViewInit, OnDestroy {
   readonly shellSearch = inject(ShellSearchService);
+  readonly toastService = inject(ToastService);
   private readonly historyService = inject(HistoryService);
   private readonly bodyScroll = inject(BodyScrollService);
   private readonly ngZone = inject(NgZone);

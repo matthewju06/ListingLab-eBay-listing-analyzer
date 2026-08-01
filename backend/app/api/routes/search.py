@@ -1,5 +1,6 @@
 import logging
 
+import httpx
 from fastapi import APIRouter, HTTPException, Query
 
 from app.models.search import SearchResponse
@@ -18,7 +19,7 @@ async def search(
     max_price: str = Query(default="", alias="maxPrice"),
     category: str | None = Query(default=None),
     condition: str | None = Query(default=None),
-    filter_strength: int = Query(default=6, alias="filterStrength"),
+    filter_strength: int = Query(default=6, alias="filterStrength", ge=1, le=20),
 ) -> SearchResponse:
     cleaned = query.strip()
     if not cleaned:
@@ -41,6 +42,17 @@ async def search(
             suggestedMaxPrice=result.suggested_max_price,
             suggestedCoverage=result.suggested_coverage,
         )
-    except Exception as exc:
+    except httpx.HTTPError:
+        logger.exception("Upstream eBay failure for query=%r", cleaned)
+        raise HTTPException(
+            status_code=502,
+            detail="Search upstream failed. Please try again.",
+        ) from None
+    except HTTPException:
+        raise
+    except Exception:
         logger.exception("Search failed for query=%r", cleaned)
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=500,
+            detail="Search failed. Please try again.",
+        ) from None

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 
 import { TrackedListing } from '../../core/models/persistence.models';
 import { TrackingService } from '../../services/tracking.service';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-tracking',
@@ -13,6 +14,7 @@ import { TrackingService } from '../../services/tracking.service';
 })
 export class TrackingComponent implements OnInit {
   private readonly trackingService = inject(TrackingService);
+  private readonly toast = inject(ToastService);
 
   readonly items = signal<TrackedListing[]>([]);
   readonly loading = signal(true);
@@ -42,7 +44,9 @@ export class TrackingComponent implements OnInit {
       },
       error: (err: Error) => {
         this.items.set([]);
-        this.error.set(err.message || 'Failed to load tracked listings');
+        const message = err.message || 'Failed to load tracked listings';
+        this.error.set(message);
+        this.toast.error(message);
         this.loading.set(false);
       },
     });
@@ -79,14 +83,14 @@ export class TrackingComponent implements OnInit {
     const title = this.formTitle.trim();
     const itemWebUrl = this.formUrl.trim();
     if (!title || !itemWebUrl) {
-      this.error.set('Title and eBay URL are required');
+      this.toast.error('Title and eBay URL are required');
       return;
     }
 
     const targetMinPrice = this.parseOptionalPrice(this.formTargetMin);
     const targetMaxPrice = this.parseOptionalPrice(this.formTargetMax);
     if (targetMinPrice === false || targetMaxPrice === false) {
-      this.error.set('Target prices must be valid numbers');
+      this.toast.error('Target prices must be valid numbers');
       return;
     }
 
@@ -111,7 +115,7 @@ export class TrackingComponent implements OnInit {
           this.saving.set(false);
         },
         error: (err: Error) => {
-          this.error.set(err.message || 'Failed to add listing');
+          this.toast.error(err.message || 'Failed to add listing');
           this.saving.set(false);
         },
       });
@@ -138,7 +142,7 @@ export class TrackingComponent implements OnInit {
         this.cancelEditNotes();
       },
       error: (err: Error) => {
-        this.error.set(err.message || 'Failed to update notes');
+        this.toast.error(err.message || 'Failed to update notes');
         this.busyId.set(null);
       },
     });
@@ -155,7 +159,7 @@ export class TrackingComponent implements OnInit {
         if (this.editingNotesId() === item.id) this.cancelEditNotes();
       },
       error: (err: Error) => {
-        this.error.set(err.message || 'Failed to delete');
+        this.toast.error(err.message || 'Failed to delete');
         this.busyId.set(null);
       },
     });

@@ -7,10 +7,11 @@
   @if (loading()) {
     <div class="persist-banner loading">Loading saved searches…</div>
   } @else if (error()) {
-    <div class="persist-banner error" role="alert">
-      {{ error() }}
-      <div class="persist-card-actions" style="margin-top: 10px">
-        <button type="button" class="persist-btn" (click)="reload()">Retry</button>
+    <div class="persist-empty">
+      <h2>Couldn't load saved searches</h2>
+      <p>Check that the API is running, then try again.</p>
+      <div class="persist-card-actions" style="justify-content: center; margin-top: 16px">
+        <button type="button" class="persist-btn primary" (click)="reload()">Retry</button>
       </div>
     </div>
   }

@@ -6,6 +6,7 @@ import { CATEGORY_OPTIONS } from '../../core/constants/app.constants';
 import { SavedSearch } from '../../core/models/persistence.models';
 import { SavedService } from '../../services/saved.service';
 import { ShellSearchService } from '../../services/shell-search.service';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-saved',
@@ -16,6 +17,7 @@ import { ShellSearchService } from '../../services/shell-search.service';
 export class SavedComponent implements OnInit {
   private readonly savedService = inject(SavedService);
   private readonly shellSearch = inject(ShellSearchService);
+  private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
 
   readonly items = signal<SavedSearch[]>([]);
@@ -37,7 +39,9 @@ export class SavedComponent implements OnInit {
       },
       error: (err: Error) => {
         this.items.set([]);
-        this.error.set(err.message || 'Failed to load saved searches');
+        const message = err.message || 'Failed to load saved searches';
+        this.error.set(message);
+        this.toast.error(message);
         this.loading.set(false);
       },
     });
@@ -104,7 +108,7 @@ export class SavedComponent implements OnInit {
         this.busyId.set(null);
       },
       error: (err: Error) => {
-        this.error.set(err.message || 'Failed to delete');
+        this.toast.error(err.message || 'Failed to delete');
         this.busyId.set(null);
       },
     });

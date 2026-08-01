@@ -28,6 +28,7 @@ import { HistoryService } from '../../services/history.service';
 import { SearchService } from '../../services/search.service';
 import { ShellSearchService } from '../../services/shell-search.service';
 import { BodyScrollService } from '../../services/body-scroll.service';
+import { ToastService } from '../../services/toast.service';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -87,6 +88,7 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
   private readonly shellSearch = inject(ShellSearchService);
   private readonly chartService = inject(ChartService);
   private readonly bodyScroll = inject(BodyScrollService);
+  private readonly toast = inject(ToastService);
   private readonly ngZone = inject(NgZone);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly route = inject(ActivatedRoute);
@@ -568,12 +570,12 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
   applyPriceRefine(): void {
     const max = String(this.refineMaxPrice ?? '').trim();
     if (!max) {
-      this.error = 'Enter a maximum price to refine, or use Reset to Auto.';
+      this.showError('Enter a maximum price to refine, or use Reset to Auto.');
       return;
     }
     const min = String(this.refineMinPrice ?? '').trim() || '0';
     if (Number(max) <= Number(min)) {
-      this.error = 'Please enter a valid price range.';
+      this.showError('Please enter a valid price range.');
       return;
     }
     // Enter key can reach this even while the button is disabled.
@@ -837,6 +839,7 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
 
     this.loading = true;
     this.error = '';
+    this.toast.dismiss();
     this.items = [];
     this.rowData = [];
     this.metrics = null;
@@ -869,7 +872,7 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
         maxPrice,
         category: this.category || null,
         condition: this.condition || null,
-        filterStrength: refined ? 0 : DEFAULT_STRENGTH,
+        filterStrength: DEFAULT_STRENGTH,
       })
       .subscribe({
         next: (response) => {
@@ -899,7 +902,7 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
           }
 
           if (!this.items.length) {
-            this.error = 'No results found. Try a different search term.';
+            this.showError('No results found. Try a different search term.', 'info');
             this.loading = false;
             this.cdr.detectChanges();
             return;
@@ -913,11 +916,20 @@ export class AnalyzerComponent implements OnInit, OnDestroy {
           this.cdr.detectChanges();
         },
         error: (err: Error) => {
-          this.error = `Search failed. ${err.message}`;
+          this.showError(err.message || 'Search failed. Please try again.');
           this.loading = false;
           this.cdr.detectChanges();
         },
       });
+  }
+
+  private showError(message: string, kind: 'error' | 'info' = 'error'): void {
+    this.error = message;
+    if (kind === 'info') {
+      this.toast.info(message);
+    } else {
+      this.toast.error(message);
+    }
   }
 
   private saveHistory(query: string): void {
